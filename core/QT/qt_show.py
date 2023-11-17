@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QGraphicsView, Q
 from core.DataAnalysis.DataDeal import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import QPropertyAnimation, QByteArray, QEasingCurve, Qt
-
+#from PyQt6.QtGui import QIcon
 class SubWindow1(QDialog):
     def __init__(self):
         super().__init__()
@@ -473,7 +473,7 @@ class SubWindow2(QDialog):
         COM.addItem('COM6')
         COM.setMinimumWidth(90)
         COM.setMaximumWidth(90)
-        COM.setStyleSheet("background-color: #F0FFF0; color: black")
+        COM.setStyleSheet("background-color: #F0F8FF; color: black")
         # 将COM和BAUD作为类的成员变量
         self.COM = COM
 
@@ -501,7 +501,7 @@ class SubWindow2(QDialog):
         BAUD.addItem('256000', 256000)
         BAUD.setMinimumWidth(90)
         BAUD.setMaximumWidth(90)
-        BAUD.setStyleSheet("background-color: #F0FFF0; color: black")
+        BAUD.setStyleSheet("background-color: #F0F8FF; color: black")
         # 将COM和BAUD作为类的成员变量
         self.BAUD = BAUD
 
@@ -517,7 +517,7 @@ class SubWindow2(QDialog):
 
         post_com_button = QPushButton("Open Serial")
         post_com_button.setFixedSize(80, 20)  # 设置按钮1的尺寸
-        post_com_button.setStyleSheet("background-color: #F0FFF0; color: black")
+        post_com_button.setStyleSheet("background-color: #F0F8FF; color: black")
         post_com_button.clicked.connect(self.PostSerialInfo)
 
         # 将开启选择的水平布局设置
@@ -600,12 +600,12 @@ class SubWindow2(QDialog):
         # 发送PID按钮
         PIDButton = QPushButton("Send PID")
         PIDButton.setFixedSize(80, 20)
-        PIDButton.setStyleSheet("background-color: #F0FFF0; color: black")
+        PIDButton.setStyleSheet("background-color: #F0F8FF; color: black")
 #        Pump4Button1.clicked.connect(lambda: self.PostCommandInfo(0x7, self.Pump4RPMEdit.text()))
 
         # 转速设定
-        lable_speed = QLabel("Speed Set")
-        lable_speed.setFixedSize(80, 15)
+        lable_speed = QLabel("Speed")
+        lable_speed.setFixedSize(70, 15)
         lable_speed.setStyleSheet("color: black")
         lable_speed.setFont(font1)
 
@@ -614,11 +614,43 @@ class SubWindow2(QDialog):
         self.SpeedRPMEdit.setPlaceholderText('100')
         self.SpeedRPMEdit.setStyleSheet("background-color:#F0F8FF; color: black")
 
+        SpeedGo = QPushButton("Go")
+        SpeedGo.setFixedSize(50, 20)
+        SpeedGo.setStyleSheet("background-color: #F0F8FF; color: black")
+
         # speed的控制框的水平布局设置
         speed_Layout = QHBoxLayout()
         speed_Layout.addWidget(lable_speed)
         speed_Layout.addWidget(self.SpeedRPMEdit)
+        speed_Layout.addWidget(SpeedGo)
         speed_Layout.setSpacing(2)
+
+        # 位置设定
+        lable_location = QLabel("Position")
+        lable_location.setFixedSize(70, 15)
+        lable_location.setStyleSheet("color: black")
+        lable_location.setFont(font1)
+
+        self.LocationRPMEdit = QLineEdit(self)
+        self.LocationRPMEdit.setFixedSize(60, 22)
+        self.LocationRPMEdit.setPlaceholderText('100')
+        self.LocationRPMEdit.setStyleSheet("background-color:#F0F8FF; color: black")
+
+        LocationGo = QPushButton("Go")
+        LocationGo.setFixedSize(50, 20)
+        LocationGo.setStyleSheet("background-color: #F0F8FF; color: black")
+
+        # speed的控制框的水平布局设置
+        Location_Layout = QHBoxLayout()
+        Location_Layout.addWidget(lable_location)
+        Location_Layout.addWidget(self.LocationRPMEdit)
+        Location_Layout.addWidget(LocationGo)
+        Location_Layout.setSpacing(2)
+
+        # 方向控制以及停止按钮
+        icon1 = QIcon()
+        icon1.addPixmap(QPixmap("Icons/Left.png"))
+
 
         # 创建控制面板中电机控制框架的布局
         Controlseparator_Frame2_Layout = QVBoxLayout(Controlseparator_Frame2)
@@ -628,6 +660,7 @@ class SubWindow2(QDialog):
         Controlseparator_Frame2_Layout.addLayout(D_Layout)
         Controlseparator_Frame2_Layout.addWidget(PIDButton)
         Controlseparator_Frame2_Layout.addLayout(speed_Layout)
+        Controlseparator_Frame2_Layout.addLayout(Location_Layout)
         Controlseparator_Frame2_Layout.setSpacing(0)
 
         # 创建垂直布局将两个框架添加到布局中
@@ -901,7 +934,7 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(button_layout)
 
         # 设置主窗口的背景颜色
-        self.setStyleSheet("background-color: lightblack;")
+        self.setStyleSheet("background-color: #F5FFFA;")
 
         # 创建一个堆叠窗口，用于显示子窗口
         self.stacked_widget = QStackedWidget()
@@ -932,6 +965,8 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(sub_window4)
         self.stacked_widget.setCurrentWidget(sub_window4)
         self.setWindowTitle("网络调试助手")
+
+
 
 
 
