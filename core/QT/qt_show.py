@@ -1,11 +1,12 @@
 import sys
-from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import *
 from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QGraphicsView, QGraphicsScene, QGraphicsLineItem, QGraphicsTextItem, QGraphicsEllipseItem
 from core.DataAnalysis.DataDeal import *
 from PyQt6.QtGui import *
-from PyQt6.QtCore import QPropertyAnimation, QByteArray, QEasingCurve, Qt
-#from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import QPropertyAnimation, QByteArray, QEasingCurve, Qt, QTimer
+import pyqtgraph as pg
+from random import randint
+
 class SubWindow1(QDialog):
     def __init__(self):
         super().__init__()
@@ -429,18 +430,28 @@ class SubWindow2(QDialog):
     def __init__(self):
         super().__init__()
 
+        #设置定时器用于周期性读取串口数据
+        self.timer = QTimer()
+        self.timer.setInterval(100)  # 每100毫秒更新一次
+        self.timer.timeout.connect(self.update_plot_data)
+#        self.timer.start()
+
+        # 初始化数据
+        self.x = list(range(100))  # 100个数据点
+        self.y = [0 for _ in range(100)]  # 初始化为0
+
         # 设置子窗口的背景颜色
-        self.setStyleSheet("background-color: #F5FFFA;")
+#        self.setStyleSheet("background-color: #F5FFFA;")
 
         # 创建控制端的实线框架（QFrame）作为分隔区域
         Controlseparator = QFrame(self)
-        Controlseparator.setStyleSheet("background-color: #F5FFFA;")
+#        Controlseparator.setStyleSheet("background-color: #F5FFFA;")
         Controlseparator.setFrameShape(QFrame.Shape.Box)
         Controlseparator.setFrameShadow(QFrame.Shadow.Sunken)
         Controlseparator.setFixedSize(240, 700)
 
         Controlseparator_Frame1 = QFrame(Controlseparator)
-        Controlseparator_Frame1.setStyleSheet("background-color: #F5FFFA;")
+#        Controlseparator_Frame1.setStyleSheet("background-color: #F5FFFA;")
         Controlseparator_Frame1.setFrameShape(QFrame.Shape.Box)
         Controlseparator_Frame1.setFrameShadow(QFrame.Shadow.Sunken)
         Controlseparator_Frame1.setFixedSize(210, 200)
@@ -603,9 +614,13 @@ class SubWindow2(QDialog):
         PIDButton.setStyleSheet("background-color: #F0F8FF; color: black")
 #        Pump4Button1.clicked.connect(lambda: self.PostCommandInfo(0x7, self.Pump4RPMEdit.text()))
 
+        PIDButton_Layout = QHBoxLayout()
+        PIDButton_Layout.addWidget(PIDButton)
+        PIDButton_Layout.setContentsMargins(30,0,30,0)
+
         # 转速设定
         lable_speed = QLabel("Speed")
-        lable_speed.setFixedSize(70, 15)
+        lable_speed.setFixedSize(65, 15)
         lable_speed.setStyleSheet("color: black")
         lable_speed.setFont(font1)
 
@@ -627,7 +642,7 @@ class SubWindow2(QDialog):
 
         # 位置设定
         lable_location = QLabel("Position")
-        lable_location.setFixedSize(70, 15)
+        lable_location.setFixedSize(65, 15)
         lable_location.setStyleSheet("color: black")
         lable_location.setFont(font1)
 
@@ -648,9 +663,37 @@ class SubWindow2(QDialog):
         Location_Layout.setSpacing(2)
 
         # 方向控制以及停止按钮
-        icon1 = QIcon()
-        icon1.addPixmap(QPixmap("Icons/Left.png"))
+#        icon1 = QIcon()
+#        icon1.addPixmap(QPixmap("Icons/Left.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        LeftButton = QPushButton("<-")
+        LeftButton.setFixedSize(50, 20)
+        LeftButton.setStyleSheet("background-color: #F0F8FF; color: black")
 
+        StopButton = QPushButton("stop")
+        StopButton.setFixedSize(50, 20)
+        StopButton.setStyleSheet("background-color: #F0F8FF; color: black")
+
+#        icon2 = QIcon()
+#        icon2.addPixmap(QPixmap("Icons/Right.png"), QIcon.Mode.Normal, QIcon.State.Off)
+        RightButton = QPushButton("->")
+        RightButton.setFixedSize(50, 20)
+        RightButton.setStyleSheet("background-color: #F0F8FF; color: black")
+
+
+        orition_Layout = QHBoxLayout()
+        orition_Layout.addWidget(LeftButton)
+        orition_Layout.addWidget(StopButton)
+        orition_Layout.addWidget(RightButton)
+        orition_Layout.setSpacing(2)
+
+        # 重置按钮
+        ResetButton = QPushButton("Reset")
+        ResetButton.setFixedSize(50, 20)
+        ResetButton.setStyleSheet("background-color: #F0F8FF; color: black")
+
+        ResetButton_Layout = QHBoxLayout()
+        ResetButton_Layout.addWidget(ResetButton)
+        ResetButton_Layout.setContentsMargins(120,0,0,0)
 
         # 创建控制面板中电机控制框架的布局
         Controlseparator_Frame2_Layout = QVBoxLayout(Controlseparator_Frame2)
@@ -658,9 +701,11 @@ class SubWindow2(QDialog):
         Controlseparator_Frame2_Layout.addLayout(P_Layout)
         Controlseparator_Frame2_Layout.addLayout(I_Layout)
         Controlseparator_Frame2_Layout.addLayout(D_Layout)
-        Controlseparator_Frame2_Layout.addWidget(PIDButton)
+        Controlseparator_Frame2_Layout.addLayout(PIDButton_Layout)
         Controlseparator_Frame2_Layout.addLayout(speed_Layout)
         Controlseparator_Frame2_Layout.addLayout(Location_Layout)
+        Controlseparator_Frame2_Layout.addLayout(orition_Layout)
+        Controlseparator_Frame2_Layout.addLayout(ResetButton_Layout)
         Controlseparator_Frame2_Layout.setSpacing(0)
 
         # 创建垂直布局将两个框架添加到布局中
@@ -682,48 +727,32 @@ class SubWindow2(QDialog):
         Showseparator_Frame1.setStyleSheet("background-color: #F5FFFA;")
         Showseparator_Frame1.setFrameShape(QFrame.Shape.Box)
         Showseparator_Frame1.setFrameShadow(QFrame.Shadow.Sunken)
-        Showseparator_Frame1.setFixedSize(900, 350)
 
-
-        label6 = QLabel("Speed Display")
-        label6.setStyleSheet("color: black")
-        label6.setFixedSize(180, 20)
-        label6.setFont(font1)
-
-        # 创建坐标轴
-        Grab1Lable = QLabel("Pump 1")
-        Gra1 = self.create_axis()
-        Grab1Lable.setStyleSheet("background-color: #F5FFFA; color: black")
-        Grab1Lable.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        #### 创建图形控件
+        self.graphWidget1 = pg.PlotWidget()
+        self.setupGraphWidget(self.graphWidget1, "Speed/RPM", "rpm", "time")
 
         # 创建电机1显示布局
         Showseparator_Frame1_Layout = QVBoxLayout(Showseparator_Frame1)
-        Showseparator_Frame1_Layout.addWidget(label6)
-        Showseparator_Frame1_Layout.addWidget(Grab1Lable)
-        Showseparator_Frame1_Layout.addWidget(Gra1)
+        Showseparator_Frame1_Layout.addWidget(self.graphWidget1)
 
         # 创建显示分区2
         Showseparator_Frame2 = QFrame(Showseparator)
         Showseparator_Frame2.setStyleSheet("background-color: #F5FFFA;")
         Showseparator_Frame2.setFrameShape(QFrame.Shape.Box)
         Showseparator_Frame2.setFrameShadow(QFrame.Shadow.Sunken)
-        Showseparator_Frame2.setFixedSize(900, 350)
 
-        # 创建坐标轴
-        Grab2Lable = QLabel("Pump 2")
-        Gra2 = self.create_axis()
-        Grab2Lable.setStyleSheet("background-color: #F5FFFA; color: black")
-        Grab2Lable.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.graphWidget2 = pg.PlotWidget()
+        self.setupGraphWidget(self.graphWidget2, "Position", "degree" , "time")
 
         # 创建电机2显示布局
         Showseparator_Frame2_Layout = QVBoxLayout(Showseparator_Frame2)
-        Showseparator_Frame2_Layout.addWidget(Grab2Lable)
-        Showseparator_Frame2_Layout.addWidget(Gra2)
+        Showseparator_Frame2_Layout.addWidget(self.graphWidget2)
 
         # 创建垂直布局将两个框架添加到布局中
         ShowLayout = QVBoxLayout(Showseparator)
-        ShowLayout.addWidget(Showseparator_Frame1)
-        ShowLayout.addWidget(Showseparator_Frame2)
+        ShowLayout.addWidget(self.graphWidget1)
+        ShowLayout.addWidget(self.graphWidget2)
         ShowLayout.setSpacing(0)
 
 
@@ -735,6 +764,13 @@ class SubWindow2(QDialog):
 
         # 将布局设置为子窗口的布局
         self.setLayout(Sub2Mainlayout)
+
+    def setupGraphWidget(self, graphWidget, title, ylabel, xlabel):
+        graphWidget.setBackground('#F5FFFA')
+        graphWidget.setTitle(title, color="black", size="20pt")
+        graphWidget.setLabel('left', ylabel, color='b', size=30)
+        graphWidget.setLabel('bottom', xlabel, color='b', size=30)
+        graphWidget.showGrid(x=True, y=True)
 
     def PostSerialInfo(self):
         self.selected_port = self.COM.currentText()
@@ -781,63 +817,18 @@ class SubWindow2(QDialog):
         except Exception as e:
             print("An exception occurred:", str(e))
 
-    def create_axis(self):
-        # 创建一个 QGraphicsView
-        graphics_view = QGraphicsView()
+    def update_plot_data(self):
+        # 这里应该是获取新数据的逻辑
+        self.x = self.x[1:]  # 删除第一个元素
+        self.x.append(self.x[-1] + 1)  # 添加新的x值
 
-        # 设置场景
-        scene = QGraphicsScene()
-        graphics_view.setScene(scene)
+        self.y = self.y[1:]  # 删除第一个元素
+        self.y.append(randint(0,100))  # 添加一个新的随机y值
 
-        # 调整可视化显示的大小
-        width = 800  # 根据需要调整
-        height = 220  # 根据需要调整
-
-        # 创建左侧的y轴（速度）
-        y_axis = QGraphicsLineItem(0, 0, 0, height)
-        y_axis.setPen(QPen(QColor("black")))
-        scene.addItem(y_axis)
-
-        # 创建x轴（时间）
-        x_axis = QGraphicsLineItem(0, height / 2, width, height / 2)
-        x_axis.setPen(QPen(QColor("black")))
-        scene.addItem(x_axis)
-
-        # 添加网格
-        for i in range(0, int(width) + 1, int(width / 8)):
-            grid_line = QGraphicsLineItem(i, 0, i, height)
-            grid_line.setPen(QPen(QColor("#808080")))  # 设置网格线颜色
-            scene.addItem(grid_line)
-
-        for i in range(0, int(height) + 1, int(height / 8)):
-            grid_line = QGraphicsLineItem(0, i, width, i)
-            grid_line.setPen(QPen(QColor("#808080")))  # 设置网格线颜色
-            scene.addItem(grid_line)
-
-
-        # 为x轴添加刻度线和标签
-        for i in range(0, int(width) + 1, int(width / 4)):
-            tick = QGraphicsLineItem(i, height / 2 - 5, i, height / 2 + 5)
-            tick.setPen(QPen(QColor("black")))
-            scene.addItem(tick)
-            label = QGraphicsTextItem(str(i))
-            label.setPos(i - 10, height / 2 + 120)
-            label.setDefaultTextColor(QColor("black"))
-            scene.addItem(label)
-
-        # 为y轴添加刻度线和标签
-        for i in range(-200, 201, 50):
-            tick = QGraphicsLineItem(-5, height * (1 - (i + 200) / 400), 5, height * (1 - (i + 200) / 400))
-            tick.setPen(QPen(QColor("black")))
-            scene.addItem(tick)
-            label = QGraphicsTextItem(str(i))
-            label.setPos(-40, height * (1 - (i + 200) / 400) - 10)
-            label.setDefaultTextColor(QColor("black"))
-            scene.addItem(label)
-
-        graphics_view.setStyleSheet("background-color: #F5FFFA;")
-
-        return graphics_view
+        # 更新图形
+        self.graphWidget1.plot(self.x, self.y, pen=pg.mkPen(color=(255, 0, 0), width=5))
+        # 更新图形
+        self.graphWidget2.plot(self.x, self.y, pen=pg.mkPen(color=(255, 0, 0), width=5))
 
 class SubWindow3(QDialog):
     def __init__(self):
