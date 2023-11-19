@@ -13,8 +13,11 @@ class SerialCommunication:
                 print("the serial secessfully open")
                 print("port:", port, "Type:", type(port))
                 print("baudrate:", baudrate, "Type:", type(baudrate))
+                return True, "serial secessfully open"
+            else:
+                return False, "Serial open fail"
         except Exception as exc:
-            print("the serial fail open", exc)
+            return False, f"{str(exc)}"
 
     def close_ser(self):
         try:
@@ -81,17 +84,38 @@ class SerialCommunication:
 
 
 
-        """
-        计算CRC-16校验值（生成多项式0x8005）
-        :param data: 要计算CRC的数据，为bytes类型
-        :return: CRC-16校验值，为整数
-        """
+    """
+    brief: 计算CRC-16校验值（生成多项式0x8005）
+    param data: 要计算CRC的数据，为bytes类型
+    return: CRC-16校验值，为整数
+    """
 
-    def CalCRC_16(self, data1, data2, data3):
-
+    def CalCRC_16(self, header, command, para):
         crc = 0xFFFF
         poly = 0x8005
-        combined_data = data1.to_bytes(2, byteorder='little') + data2.to_bytes(1, byteorder='little') + data3
+        combined_data = header.to_bytes(2, byteorder='little') + command.to_bytes(1, byteorder='little') + para
+        hex_data_packet = ''.join([f'{byte:02x}' for byte in combined_data])
+        print("Data Packet in CRC: ", hex_data_packet)
+        for i, byte in enumerate(combined_data):
+            #            print("循环次数:", i)  # 打印循环次数
+            #           print("当前处理的字节:", hex(byte))  # 打印当前处理的字节
+            crc ^= (byte << 8)  # 将当前字节左移8位后与CRC异或,相当于加入了对crc的影响
+            for _ in range(8):
+                if crc & 0x8000:
+                    crc = (crc << 1) ^ poly
+                else:
+                    crc <<= 1
+        return crc & 0xFFFF
+
+    """
+    brief: 计算CRC-16校验值（生成多项式0x8005）(PID参数专用)
+    param data: 要计算CRC的数据，为bytes类型
+    return: CRC-16校验值，为整数
+    """
+    def CalCRC_16_PID(self, header, command, Pvalue, Ivalue, Dvalue):
+        crc = 0xFFFF
+        poly = 0x8005
+        combined_data = header.to_bytes(2, byteorder='little') + command.to_bytes(1, byteorder='little') + Pvalue + Ivalue + Dvalue
         hex_data_packet = ''.join([f'{byte:02x}' for byte in combined_data])
         print("Data Packet in CRC: ", hex_data_packet)
         for i, byte in enumerate(combined_data):

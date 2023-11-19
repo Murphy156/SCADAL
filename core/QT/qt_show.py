@@ -542,9 +542,8 @@ class SubWindow2(QDialog):
         Controlseparator_Frame1_Layout.addLayout(PortLayout)
         Controlseparator_Frame1_Layout.addLayout(BAUDLayout)
         Controlseparator_Frame1_Layout.addLayout(CommunicaitonLayout)
-        # Controlseparator_Frame1_Layout.setSpacing(5)
 
-########## 控制面板中的框架2
+        # 控制面板中的框架2
         #创建控制面板中电机控制框架
         Controlseparator_Frame2 = QFrame(Controlseparator)
         Controlseparator_Frame2.setStyleSheet("background-color: #F5FFFA;")
@@ -612,7 +611,7 @@ class SubWindow2(QDialog):
         PIDButton = QPushButton("Send PID")
         PIDButton.setFixedSize(80, 20)
         PIDButton.setStyleSheet("background-color: #F0F8FF; color: black")
-#        Pump4Button1.clicked.connect(lambda: self.PostCommandInfo(0x7, self.Pump4RPMEdit.text()))
+        PIDButton.clicked.connect(lambda: self.PostPID(0x10, self.P_RPMEdit.text(), self.I_RPMEdit.text(), self.D_RPMEdit.text()))
 
         PIDButton_Layout = QHBoxLayout()
         PIDButton_Layout.addWidget(PIDButton)
@@ -632,6 +631,7 @@ class SubWindow2(QDialog):
         SpeedGo = QPushButton("Go")
         SpeedGo.setFixedSize(50, 20)
         SpeedGo.setStyleSheet("background-color: #F0F8FF; color: black")
+        SpeedGo.clicked.connect(lambda: self.PostCommandInfo(0x11, self.SpeedRPMEdit.text()))
 
         # speed的控制框的水平布局设置
         speed_Layout = QHBoxLayout()
@@ -654,6 +654,7 @@ class SubWindow2(QDialog):
         LocationGo = QPushButton("Go")
         LocationGo.setFixedSize(50, 20)
         LocationGo.setStyleSheet("background-color: #F0F8FF; color: black")
+        LocationGo.clicked.connect(lambda: self.PostCommandInfo(0x12, self.LocationRPMEdit.text()))
 
         # speed的控制框的水平布局设置
         Location_Layout = QHBoxLayout()
@@ -663,21 +664,20 @@ class SubWindow2(QDialog):
         Location_Layout.setSpacing(2)
 
         # 方向控制以及停止按钮
-#        icon1 = QIcon()
-#        icon1.addPixmap(QPixmap("Icons/Left.png"), QIcon.Mode.Normal, QIcon.State.Off)
         LeftButton = QPushButton("<-")
         LeftButton.setFixedSize(50, 20)
         LeftButton.setStyleSheet("background-color: #F0F8FF; color: black")
+        LeftButton.clicked.connect(lambda: self.PostCommandInfo(0x13, 0x0))
 
         StopButton = QPushButton("stop")
         StopButton.setFixedSize(50, 20)
         StopButton.setStyleSheet("background-color: #F0F8FF; color: black")
+        StopButton.clicked.connect(lambda: self.PostCommandInfo(0x14, 0x0))
 
-#        icon2 = QIcon()
-#        icon2.addPixmap(QPixmap("Icons/Right.png"), QIcon.Mode.Normal, QIcon.State.Off)
         RightButton = QPushButton("->")
         RightButton.setFixedSize(50, 20)
         RightButton.setStyleSheet("background-color: #F0F8FF; color: black")
+        RightButton.clicked.connect(lambda: self.PostCommandInfo(0x15, 0x0))
 
 
         orition_Layout = QHBoxLayout()
@@ -690,6 +690,7 @@ class SubWindow2(QDialog):
         ResetButton = QPushButton("Reset")
         ResetButton.setFixedSize(50, 20)
         ResetButton.setStyleSheet("background-color: #F0F8FF; color: black")
+        ResetButton.clicked.connect(lambda: self.PostCommandInfo(0x16, 0x0))
 
         ResetButton_Layout = QHBoxLayout()
         ResetButton_Layout.addWidget(ResetButton)
@@ -755,8 +756,6 @@ class SubWindow2(QDialog):
         ShowLayout.addWidget(self.graphWidget2)
         ShowLayout.setSpacing(0)
 
-
-
         # 创建水平布局
         Sub2Mainlayout = QHBoxLayout()
         Sub2Mainlayout.addWidget(Controlseparator)
@@ -772,40 +771,60 @@ class SubWindow2(QDialog):
         graphWidget.setLabel('bottom', xlabel, color='b', size=30)
         graphWidget.showGrid(x=True, y=True)
 
+
+    def show_auto_close_dialog(self, message, timeout=2000):
+        # 创建对话框
+        dialog = QDialog(self)
+        dialog.setLayout(QVBoxLayout())
+        dialog.layout().addWidget(QLabel(message))
+
+        # 设置计时器关闭对话框
+        QTimer.singleShot(timeout, dialog.close)
+        dialog.exec()
+
     def PostSerialInfo(self):
         self.selected_port = self.COM.currentText()
         self.selected_baud = int(self.BAUD.currentText())
         OpenSeri = SerialCommunication()
-        if self.indicatior.styleSheet() == "background-color: gray; border-radius: 10px;":
-            self.indicatior.setStyleSheet("background-color: green; border-radius: 10px;")
+        if self.indicatior.styleSheet() == "background-color: green; border-radius: 10px;" and OpenSeri.ser.isOpen() == True:
+            self.indicatior.styleSheet() == "background-color: gray; border-radius: 10px;"
             self.COM.setDisabled(True)
             self.BAUD.setDisabled(True)
-            OpenSeri.open_ser(self.selected_port, self.selected_baud)
+            message = OpenSeri.close_ser()
+            self.show_auto_close_dialog("Serial State: " + message, 1000)
         else:
-            self.indicatior.setStyleSheet("background-color: gray; border-radius: 10px;")
-            self.COM.setEnabled(True)
-            self.BAUD.setEnabled(True)
-            OpenSeri.close_ser()
+            self.indicatior.styleSheet() == "background-color: green; border-radius: 10px;"
+            self.COM.setDisabled(True)
+            self.BAUD.setDisabled(True)
+            success, message = OpenSeri.open_ser(self.selected_port, self.selected_baud)
+            if success:
+                self.show_auto_close_dialog("Serial State: " + message, 1000)
+            else:
+                self.show_auto_close_dialog("Serial Err: " + message, 1000)
         print("Selected port:", self.selected_port)
         print("Selected baud rate:", self.selected_baud)
 
+
+    """
+        brief: 发送信息
+        para1: 命令码
+        para2: 参数
+    """
     def PostCommandInfo(self, contcommand, parameter):
         try:
             HeaderCode = 0x55AA
             CombinPost = SerialCommunication()
             if parameter == '':
-                print("Parameter is empty. Please enter a value.")
+                self.show_auto_close_dialog("Error: The parameters is empty, please enter value", 2000)
                 return  # Return early if parameter is empty
-
             parameter = int(parameter)
-
             # 检测parameter是否为负数
             if isinstance(parameter, int) and parameter < 0:
                 # Convert negative integers to bytes
-                parameter_bytes = parameter.to_bytes(4, byteorder='little', signed=True)
+                parameter_bytes = parameter.to_bytes(6, byteorder='little', signed=True)
             else:
                 # Convert non-negative integers to bytes
-                parameter_bytes = int(parameter).to_bytes(4, byteorder='little', signed=False)
+                parameter_bytes = int(parameter).to_bytes(6, byteorder='little', signed=False)
 
             CRC_bytes = CombinPost.CalCRC_16(HeaderCode, contcommand, parameter_bytes)
             print(f"CRC-16校验值: 0x{CRC_bytes:04X}")
@@ -815,7 +834,58 @@ class SubWindow2(QDialog):
             print("Data Packet in PostCommandInfo: ", hex_data_packet)
             CombinPost.send_msg(DataPacket)
         except Exception as e:
-            print("An exception occurred:", str(e))
+            self.show_auto_close_dialog(f"Warning: {str(e)}", 2000)
+
+
+    """
+        brief: 发送PID的信息
+        contcommand: 命令码
+        Pvalue: 比例值
+        Ivalue: 积分值
+        Dvalue: 微分值
+        return: None/状态
+    """
+    def PostPID(self, contcommand, Pvalue, Ivalue, Dvalue):
+        try:
+            HeaderCode = 0x55AA
+            CombinPost = SerialCommunication()
+            if Pvalue == '' and Ivalue == '' and Dvalue == '':
+                self.show_auto_close_dialog("Error: please input PID value", 2000)
+                return  # Return early if parameter is empty
+            """
+            PID参数，一般是正数
+            """
+            Pvalue = int(Pvalue)
+            if not 0 <= Pvalue <= 65535:
+                self.show_auto_close_dialog("范围错误: P值超出范围。它必须在0到65535之间。", 2000)
+                return
+
+            Pvalue_bytes = Pvalue.to_bytes(2, byteorder='little', signed=False)
+
+            Ivalue = int(Ivalue)
+            if not 0 <= Ivalue <= 65535:
+                self.show_auto_close_dialog("范围错误: I值超出范围。它必须在0到65535之间。", 2000)
+                return
+            Ivalue_bytes = Ivalue.to_bytes(2, byteorder='little', signed=False)
+
+            Dvalue = int(Dvalue)
+            if not 0 <= Dvalue <= 65535:
+                self.show_auto_close_dialog("范围错误: D值超出范围。它必须在0到65535之间。", 2000)
+                return
+            Dvalue_bytes = Dvalue.to_bytes(2, byteorder='little', signed=False)
+
+            PID_para = Pvalue_bytes + Ivalue_bytes + Dvalue_bytes
+            CRC_bytes = CombinPost.CalCRC_16(HeaderCode, contcommand, PID_para)
+            print(f"CRC-16校验值: 0x{CRC_bytes:04X}")
+            print("Pvalue: ", Pvalue_bytes, type(Pvalue_bytes))
+            print("Ivalue: ", Ivalue_bytes, type(Ivalue_bytes))
+            print("Dvalue: ", Dvalue_bytes, type(Dvalue_bytes))
+            DataPacket = CombinPost.create_data_packet(HeaderCode, contcommand, PID_para, CRC_bytes)
+            hex_data_packet = ''.join([f'{byte:02x}' for byte in DataPacket])
+            print("Data Packet in PostCommandInfo: ", hex_data_packet)
+            CombinPost.send_msg(DataPacket)
+        except Exception as e:
+            self.show_auto_close_dialog(f"Warning: {str(e)}", 2000)
 
     def update_plot_data(self):
         # 这里应该是获取新数据的逻辑
