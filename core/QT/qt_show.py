@@ -1,9 +1,8 @@
 import sys
 from PyQt6.QtWidgets import *
-from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QGraphicsView, QGraphicsScene, QGraphicsLineItem, QGraphicsTextItem, QGraphicsEllipseItem
 from core.DataAnalysis.DataDeal import *
 from PyQt6.QtGui import *
-from PyQt6.QtCore import QPropertyAnimation, QByteArray, QEasingCurve, Qt, QTimer
+from PyQt6.QtCore import *
 import pyqtgraph as pg
 from random import randint
 
@@ -440,6 +439,9 @@ class SubWindow2(QDialog):
         self.x = list(range(100))  # 100个数据点
         self.y = [0 for _ in range(100)]  # 初始化为0
 
+        # 创建一个串口对象
+        self.OpenSeri = SerialCommunication()
+
         # 设置子窗口的背景颜色
 #        self.setStyleSheet("background-color: #F5FFFA;")
 
@@ -615,7 +617,7 @@ class SubWindow2(QDialog):
 
         PIDButton_Layout = QHBoxLayout()
         PIDButton_Layout.addWidget(PIDButton)
-        PIDButton_Layout.setContentsMargins(30,0,30,0)
+        PIDButton_Layout.setContentsMargins(30, 0, 30, 0)
 
         # 转速设定
         lable_speed = QLabel("Speed")
@@ -729,6 +731,11 @@ class SubWindow2(QDialog):
         Showseparator_Frame1.setFrameShape(QFrame.Shape.Box)
         Showseparator_Frame1.setFrameShadow(QFrame.Shadow.Sunken)
 
+        # 接收数据
+        self.serial_com = SerialCommunication()
+        self.serial_com.data_received.connect(self.display_data)
+        #self.serial_com.data_received.connect(self.update_plot_data)
+
         #### 创建图形控件
         self.graphWidget1 = pg.PlotWidget()
         self.setupGraphWidget(self.graphWidget1, "Speed/RPM", "rpm", "time")
@@ -750,6 +757,8 @@ class SubWindow2(QDialog):
         Showseparator_Frame2_Layout = QVBoxLayout(Showseparator_Frame2)
         Showseparator_Frame2_Layout.addWidget(self.graphWidget2)
 
+        self.textEdit = QTextEdit(self)
+
         # 创建垂直布局将两个框架添加到布局中
         ShowLayout = QVBoxLayout(Showseparator)
         ShowLayout.addWidget(self.graphWidget1)
@@ -763,6 +772,14 @@ class SubWindow2(QDialog):
 
         # 将布局设置为子窗口的布局
         self.setLayout(Sub2Mainlayout)
+
+    def display_data(self, data):
+        try:
+            # 将二进制数据转换为十六进制字符串
+            hex_representation = data.hex()
+            self.textEdit.append(hex_representation.upper())  # 添加到 QTextEdit 控件中
+        except Exception as e:
+            print(f"Error while updating textEdit: {e}")
 
     def setupGraphWidget(self, graphWidget, title, ylabel, xlabel):
         graphWidget.setBackground('#F5FFFA')
@@ -785,25 +802,27 @@ class SubWindow2(QDialog):
     def PostSerialInfo(self):
         self.selected_port = self.COM.currentText()
         self.selected_baud = int(self.BAUD.currentText())
-        OpenSeri = SerialCommunication()
-        if self.indicatior.styleSheet() == "background-color: green; border-radius: 10px;" and OpenSeri.ser.isOpen() == True:
-            self.indicatior.styleSheet() == "background-color: gray; border-radius: 10px;"
-            self.COM.setDisabled(True)
-            self.BAUD.setDisabled(True)
-            message = OpenSeri.close_ser()
-            self.show_auto_close_dialog("Serial State: " + message, 1000)
-        else:
-            self.indicatior.styleSheet() == "background-color: green; border-radius: 10px;"
-            self.COM.setDisabled(True)
-            self.BAUD.setDisabled(True)
-            success, message = OpenSeri.open_ser(self.selected_port, self.selected_baud)
+        if self.OpenSeri.ser is not None and self.OpenSeri.ser.isOpen():
+            success, message = self.OpenSeri.close_ser()
             if success:
+                self.COM.setDisabled(False)
+                self.BAUD.setDisabled(False)
+                self.indicatior.setStyleSheet("background-color: gray; border-radius: 10px;")
                 self.show_auto_close_dialog("Serial State: " + message, 1000)
             else:
+                self.show_auto_close_dialog("Serial State: " + message, 1000)
+        else:
+            success, message = self.OpenSeri.open_ser(self.selected_port, self.selected_baud)
+            if success:
+                self.indicatior.setStyleSheet("background-color: green; border-radius: 10px;")
+                self.COM.setDisabled(True)
+                self.BAUD.setDisabled(True)
+                self.show_auto_close_dialog("Serial State: " + message, 1000)
+                print("Selected port:", self.selected_port)
+                print("Selected baud rate:", self.selected_baud)
+            else:
+                print(message)
                 self.show_auto_close_dialog("Serial Err: " + message, 1000)
-        print("Selected port:", self.selected_port)
-        print("Selected baud rate:", self.selected_baud)
-
 
     """
         brief: 发送信息
@@ -821,10 +840,10 @@ class SubWindow2(QDialog):
             # 检测parameter是否为负数
             if isinstance(parameter, int) and parameter < 0:
                 # Convert negative integers to bytes
-                parameter_bytes = parameter.to_bytes(6, byteorder='little', signed=True)
+                parameter_bytes = parameter.to_bytes(8, byteorder='little', signed=True)
             else:
                 # Convert non-negative integers to bytes
-                parameter_bytes = int(parameter).to_bytes(6, byteorder='little', signed=False)
+                parameter_bytes = int(parameter).to_bytes(8, byteorder='little', signed=False)
 
             CRC_bytes = CombinPost.CalCRC_16(HeaderCode, contcommand, parameter_bytes)
             print(f"CRC-16校验值: 0x{CRC_bytes:04X}")
@@ -856,17 +875,17 @@ class SubWindow2(QDialog):
             PID参数，一般是正数
             """
             Pvalue = int(Pvalue)
-            if not 0 <= Pvalue <= 65535:
-                self.show_auto_close_dialog("范围错误: P值超出范围。它必须在0到65535之间。", 2000)
+            if not 0 <= Pvalue <= 16777215:
+                self.show_auto_close_dialog("范围错误: P值超出范围。它必须在0到16777215之间。", 2000)
                 return
 
-            Pvalue_bytes = Pvalue.to_bytes(2, byteorder='little', signed=False)
+            Pvalue_bytes = Pvalue.to_bytes(3, byteorder='little', signed=False)
 
             Ivalue = int(Ivalue)
-            if not 0 <= Ivalue <= 65535:
-                self.show_auto_close_dialog("范围错误: I值超出范围。它必须在0到65535之间。", 2000)
+            if not 0 <= Ivalue <= 16777215:
+                self.show_auto_close_dialog("范围错误: I值超出范围。它必须在0到16777215之间。", 2000)
                 return
-            Ivalue_bytes = Ivalue.to_bytes(2, byteorder='little', signed=False)
+            Ivalue_bytes = Ivalue.to_bytes(3, byteorder='little', signed=False)
 
             Dvalue = int(Dvalue)
             if not 0 <= Dvalue <= 65535:

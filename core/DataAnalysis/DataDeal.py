@@ -1,54 +1,117 @@
-import serial
+import time
 from core.QT.qt_show import *
+from PyQt6.QtCore import *
+import threading
+from PyQt6.QtWidgets import *
+import serial
 
-class SerialCommunication:
+class SerialCommunication(QObject):
+    # 创建一个新信号
+    data_received = pyqtSignal(bytes)
     def __init__(self):
+        super().__init__()
         self.ser = None
+        self.running = False
 
     def open_ser(self, port, baudrate):
         try:
-            global ser
-            ser = serial.Serial(port, baudrate, timeout=0.5)
-            if (ser.isOpen() == True):
-                print("the serial secessfully open")
-                print("port:", port, "Type:", type(port))
-                print("baudrate:", baudrate, "Type:", type(baudrate))
-                return True, "serial secessfully open"
-            else:
-                return False, "Serial open fail"
+            self.ser = serial.Serial(port, baudrate, timeout=10)
+            if(self.ser.isOpen() == True):
+                self.running = True
+                threading.Thread(target=self.read_data, daemon=True).start()
+                print("The serial port successfully opened")
+                return True, "Serial port successfully opened"
         except Exception as exc:
-            return False, f"{str(exc)}"
+            return False, f"Serial port opening failed: {str(exc)}"
+
 
     def close_ser(self):
         try:
-            global ser
-            if ser.is_open:
-                ser.close()
-                print("Serial port closed successfully.")
+            if self.ser and self.ser.is_open:
+                self.running = False
+                self.ser.close()
+                return True, "Serial port closed successfully."
             else:
-                print("Serial port is not open.")
+                return False, "Serial port closed fail."
         except Exception as exc:
-            print("Error while closing serial port:", exc)
+            return False, f"Error while closing serial port:{str(exc)}"
 
     def send_msg(self, data):
         try:
-            print("Serial port is open:", ser.is_open)
-            ser.write(data)
-            print("data post:", data.hex())
-        except Exception as exc:
-            print("post err", exc)
-
-    def read_msg(self, num_bytes_to_read):
-        try:
-            if ser.is_open:
-                data = ser.read(num_bytes_to_read)
-                return data
+            if self.ser and self.ser.is_open:
+                self.ser.write(data)
+                print(f"Data sent: {data.hex()}")
             else:
-                print("串行端口未打开。")
-                return None
+                print("Serial port is not open.")
         except Exception as exc:
-            print("从串行端口读取数据时出现错误：", exc)
-            return None
+            print(f"Error while sending data: {exc}")
+
+    # def read_msg(self, num_bytes_to_read):
+    #     try:
+    #         if ser.is_open:
+    #             data = ser.read(num_bytes_to_read)
+    #             return data
+    #         else:
+    #             print("串行端口未打开。")
+    #             return None
+    #     except Exception as exc:
+    #         print("从串行端口读取数据时出现错误：", exc)
+    #         return None
+
+    def read_data(self):
+        while self.running:
+            if self.ser.in_waiting > 0:
+                data = self.ser.read(self.ser.in_waiting)
+                hex_representation = data.hex()
+                print(hex_representation)
+                self.data_received.emit(data)
+
+                # 处理并验证数据
+                validated_data = self.process_and_validate_data(data)
+                if validated_data is not False:
+                    print("Validated Data: ", validated_data.hex())
+                else:
+                    print("Invalid or incomplete data received")
+            else:
+                time.sleep(0.1)
+
+
+
+    """
+    brief: 数据处理
+    para : data
+    """
+    def process_and_validate_data(self, data):
+        header = b'\xAA\x55'
+        header_index = data.find(header)
+
+        if header_index == -1:
+            return False  # 数据头未找到
+
+        cmd_index = header_index + len(header)
+        if cmd_index >= len(data):
+            return False  # 验证数据长度
+
+        # 假设命令是一个字节，参数是四个字节
+        data_index = cmd_index + 1
+        crc_index = data_index + 4
+        if crc_index + 2 > len(data):
+            return False  # 数据长度不足
+
+        cmd = data[cmd_index:cmd_index + 1]  # 提取命令字节
+        para = data[data_index:data_index + 4]  # 提取参数字节
+        received_crc = data[crc_index:crc_index + 2]  # 提取接收到的CRC
+
+        # 计算CRC
+        calculated_crc = self.CalCRC_16_Reci(header, cmd, para)
+        calculated_crc_bytes = calculated_crc.to_bytes(2, 'little')
+
+        if received_crc == calculated_crc_bytes:
+
+            return para
+        else:
+            return False
+
 
     """
     brief:创建数据包
@@ -107,17 +170,14 @@ class SerialCommunication:
                     crc <<= 1
         return crc & 0xFFFF
 
-    """
-    brief: 计算CRC-16校验值（生成多项式0x8005）(PID参数专用)
-    param data: 要计算CRC的数据，为bytes类型
-    return: CRC-16校验值，为整数
-    """
-    def CalCRC_16_PID(self, header, command, Pvalue, Ivalue, Dvalue):
+    def CalCRC_16_Reci(self, header, command, para):
         crc = 0xFFFF
         poly = 0x8005
-        combined_data = header.to_bytes(2, byteorder='little') + command.to_bytes(1, byteorder='little') + Pvalue + Ivalue + Dvalue
+        # 直接拼接字节数据
+        combined_data = header + command + para
         hex_data_packet = ''.join([f'{byte:02x}' for byte in combined_data])
         print("Data Packet in CRC: ", hex_data_packet)
+
         for i, byte in enumerate(combined_data):
             #            print("循环次数:", i)  # 打印循环次数
             #           print("当前处理的字节:", hex(byte))  # 打印当前处理的字节
