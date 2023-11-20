@@ -4,14 +4,24 @@ from PyQt6.QtCore import *
 import threading
 from PyQt6.QtWidgets import *
 import serial
+from core.QT.qt_show import *
 
 class SerialCommunication(QObject):
     # 创建一个新信号
     data_received = pyqtSignal(bytes)
+    speed_data_received = pyqtSignal(int)
+
+
     def __init__(self):
         super().__init__()
         self.ser = None
         self.running = False
+        # 定义命令处理函数的映射
+        self.cmd_handlers = {
+            b'\x17': self.handle17_ShowSpeed,
+            b'\x18': self.handle18_ShowLocation,
+            b'\x19': self.handle19_synchronousPID,
+        }
 
     def open_ser(self, port, baudrate):
         try:
@@ -46,17 +56,28 @@ class SerialCommunication(QObject):
         except Exception as exc:
             print(f"Error while sending data: {exc}")
 
-    # def read_msg(self, num_bytes_to_read):
-    #     try:
-    #         if ser.is_open:
-    #             data = ser.read(num_bytes_to_read)
-    #             return data
-    #         else:
-    #             print("串行端口未打开。")
-    #             return None
-    #     except Exception as exc:
-    #         print("从串行端口读取数据时出现错误：", exc)
-    #         return None
+
+    def handle17_ShowSpeed(self, para):
+        # print("para Data17: ", para.hex())
+        # print("Type of para Data:", type(para))
+        SpeedValue = int.from_bytes(para, byteorder='little')  # 或者 'big'，取决于字节序
+        # print("para Integer Value:", SpeedValue)
+        self.speed_data_received.emit(SpeedValue)
+
+
+    def handle18_ShowLocation(self, para):
+        print("para Data18: ", para.hex())
+        print("Type of para Data:", type(para))
+        integer_value = int.from_bytes(para, byteorder='little')  # 或者 'big'，取决于字节序
+        print("para Integer Value:", integer_value)
+
+    def handle19_synchronousPID(self, para):
+        print("para Data19: ", para.hex())
+        print("Type of para Data:", type(para))
+        integer_value = int.from_bytes(para, byteorder='little')  # 或者 'big'，取决于字节序
+        print("para Integer Value:", integer_value)
+
+
 
     def read_data(self):
         while self.running:
@@ -65,11 +86,16 @@ class SerialCommunication(QObject):
                 hex_representation = data.hex()
                 print(hex_representation)
                 self.data_received.emit(data)
-
                 # 处理并验证数据
                 validated_data = self.process_and_validate_data(data)
                 if validated_data is not False:
-                    print("Validated Data: ", validated_data.hex())
+                    cmd = validated_data['cmd']
+                    para = validated_data['para']
+                    handler = self.cmd_handlers.get(cmd)
+                    if handler:
+                        handler(para)
+                    else:
+                        print("Unknown command:", cmd.hex())
                 else:
                     print("Invalid or incomplete data received")
             else:
@@ -107,8 +133,7 @@ class SerialCommunication(QObject):
         calculated_crc_bytes = calculated_crc.to_bytes(2, 'little')
 
         if received_crc == calculated_crc_bytes:
-
-            return para
+            return {'cmd': cmd, 'para': para}
         else:
             return False
 
