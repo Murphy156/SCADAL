@@ -4,7 +4,7 @@ from core.DataAnalysis.DataDeal import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 import pyqtgraph as pg
-from random import randint
+# from random import randint
 
 class SubWindow1(QDialog):
     def __init__(self):
@@ -34,10 +34,10 @@ class SubWindow2(QDialog):
         super().__init__()
 
         #设置定时器用于周期性读取串口数据
-        self.timer = QTimer()
-        self.timer.setInterval(100)  # 每100毫秒更新一次
-        self.timer.timeout.connect(self.update_plot_data)
-#        self.timer.start()
+        # self.timer = QTimer()
+        # self.timer.setInterval(100)  # 每100毫秒更新一次
+        # self.timer.timeout.connect(self.update_plot_data)
+        # self.timer.start()
 
         # 初始化数据
         self.x = list(range(100))  # 100个数据点
@@ -336,9 +336,9 @@ class SubWindow2(QDialog):
         Showseparator_Frame1.setFrameShape(QFrame.Shape.Box)
         Showseparator_Frame1.setFrameShadow(QFrame.Shadow.Sunken)
 
-        #### 创建图形控件
+        """ 创建图形控件 """
         self.graphWidget1 = pg.PlotWidget()
-        self.setupGraphWidget(self.graphWidget1, "Speed/RPM", "rpm", "time")
+        self.setupGraphWidget(self.graphWidget1, "Speed/RPM", "rpm", "time/s")
 
         # 创建电机1显示布局
         Showseparator_Frame1_Layout = QVBoxLayout(Showseparator_Frame1)
@@ -351,7 +351,7 @@ class SubWindow2(QDialog):
         Showseparator_Frame2.setFrameShadow(QFrame.Shadow.Sunken)
 
         self.graphWidget2 = pg.PlotWidget()
-        self.setupGraphWidget(self.graphWidget2, "Position", "degree" , "time")
+        self.setupGraphWidget(self.graphWidget2, "Position", "degree", "time/s")
 
         # 创建电机2显示布局
         Showseparator_Frame2_Layout = QVBoxLayout(Showseparator_Frame2)
@@ -371,17 +371,9 @@ class SubWindow2(QDialog):
         # 将布局设置为子窗口的布局
         self.setLayout(Sub2Mainlayout)
 
-    def display_data(self, data):
-        try:
-            # 将二进制数据转换为十六进制字符串
-            hex_representation = data.hex()
-            self.textEdit.append(hex_representation.upper())  # 添加到 QTextEdit 控件中
-        except Exception as e:
-            print(f"Error while updating textEdit: {e}")
-
     def setupGraphWidget(self, graphWidget, title, ylabel, xlabel):
         graphWidget.setBackground('#F5FFFA')
-        graphWidget.setTitle(title, color="black", size="20pt")
+        graphWidget.setTitle(title, color="black", size="15pt")
         graphWidget.setLabel('left', ylabel, color='b', size=30)
         graphWidget.setLabel('bottom', xlabel, color='b', size=30)
         graphWidget.showGrid(x=True, y=True)
@@ -504,18 +496,18 @@ class SubWindow2(QDialog):
         except Exception as e:
             self.show_auto_close_dialog(f"Warning: {str(e)}", 2000)
 
-    def update_plot_data(self):
-        # 这里应该是获取新数据的逻辑
-        self.x = self.x[1:]  # 删除第一个元素
-        self.x.append(self.x[-1] + 1)  # 添加新的x值
-
-        self.y = self.y[1:]  # 删除第一个元素
-        self.y.append(randint(0,100))  # 添加一个新的随机y值
-
-        # 更新图形
-        self.graphWidget1.plot(self.x, self.y, pen=pg.mkPen(color=(255, 0, 0), width=5))
-        # 更新图形
-        self.graphWidget2.plot(self.x, self.y, pen=pg.mkPen(color=(255, 0, 0), width=5))
+    # def update_plot_data(self):
+    #     # 这里应该是获取新数据的逻辑
+    #     self.x = self.x[1:]  # 删除第一个元素
+    #     self.x.append(self.x[-1] + 1)  # 添加新的x值
+    #
+    #     self.y = self.y[1:]  # 删除第一个元素
+    #     self.y.append(randint(0,100))  # 添加一个新的随机y值
+    #
+    #     # 更新图形
+    #     self.graphWidget1.plot(self.x, self.y, pen=pg.mkPen(color=(255, 0, 0), width=5))
+    #     # 更新图形
+    #     self.graphWidget2.plot(self.x, self.y, pen=pg.mkPen(color=(255, 0, 0), width=5))
 
     def update_plot_speed(self, new_speed):
         self.x.append(self.x[-1] + 1)  # 增加新的x值
