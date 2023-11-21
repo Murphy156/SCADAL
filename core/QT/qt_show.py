@@ -550,20 +550,21 @@ class SubWindow2(QDialog):
             """
             PID参数，一般是正数
             """
-            Pvalue = int(Pvalue)
+            # 默认值设置为0
+            Pvalue = int(Pvalue) if Pvalue else 0
             if not 0 <= Pvalue <= 16777215:
                 self.show_auto_close_dialog("范围错误: P值超出范围。它必须在0到16777215之间。", 2000)
                 return
 
             Pvalue_bytes = Pvalue.to_bytes(3, byteorder='little', signed=False)
 
-            Ivalue = int(Ivalue)
+            Ivalue = int(Ivalue) if Ivalue else 0
             if not 0 <= Ivalue <= 16777215:
                 self.show_auto_close_dialog("范围错误: I值超出范围。它必须在0到16777215之间。", 2000)
                 return
             Ivalue_bytes = Ivalue.to_bytes(3, byteorder='little', signed=False)
 
-            Dvalue = int(Dvalue)
+            Dvalue = int(Dvalue) if Dvalue else 0
             if not 0 <= Dvalue <= 65535:
                 self.show_auto_close_dialog("范围错误: D值超出范围。它必须在0到65535之间。", 2000)
                 return
