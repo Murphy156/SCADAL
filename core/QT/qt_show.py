@@ -50,335 +50,404 @@ class SubWindow2(QDialog):
         self.OpenSeri = SerialCommunication()
         self.OpenSeri.speed_data_received.connect(self.update_plot_speed)
 
-        # 设置子窗口的背景颜色
-#        self.setStyleSheet("background-color: #F5FFFA;")
-
         # 创建控制端的实线框架（QFrame）作为分隔区域
-        Controlseparator = QFrame(self)
-#        Controlseparator.setStyleSheet("background-color: #F5FFFA;")
-        Controlseparator.setFrameShape(QFrame.Shape.Box)
-        Controlseparator.setFrameShadow(QFrame.Shadow.Sunken)
-        Controlseparator.setFixedSize(240, 700)
+        self.Controlseparator = QFrame(self)
+        self.Controlseparator.setFixedSize(180, 650)
+        self.Controlseparator.setStyleSheet("""
+                    QFrame {
+                        background-color: #E3E3E3;  /* 淡灰色背景 */
+                        border-radius: 10px;  /* 圆角边框 */
+                        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);  /* 轻微阴影 */
+                    }
+                """)
+        self.Controlseparator.setFrameShape(QFrame.Shape.NoFrame)  # 移除内置边框样式
 
-        Controlseparator_Frame1 = QFrame(Controlseparator)
-#        Controlseparator_Frame1.setStyleSheet("background-color: #F5FFFA;")
-        Controlseparator_Frame1.setFrameShape(QFrame.Shape.Box)
-        Controlseparator_Frame1.setFrameShadow(QFrame.Shadow.Sunken)
-        Controlseparator_Frame1.setFixedSize(210, 200)
+        self.Controlseparator_Frame1 = QFrame(self.Controlseparator)
+        self.Controlseparator_Frame1.setFrameShape(QFrame.Shape.Box)
+        self.Controlseparator_Frame1.setFrameShadow(QFrame.Shadow.Sunken)
+        self.Controlseparator_Frame1.setFixedSize(160, 200)
 
-        label1 = QLabel("Serial Port Configuration")
-        label1.setStyleSheet("color: black")
-        label1.setFixedSize(180, 20)
-        # 创建一个字体对象
-        font1 = QFont()
-        font1.setPointSize(15)  # 设置字体大小
-        font1.setBold(True)     # 设置为粗体
-        label1.setFont(font1)
+        self.label1 = self.create_label("Serial Configuration", "Segoe UI", 10, True, "#000080")
 
         # 串口布局安排
-        label2 = QLabel("Port")
-        label2.setStyleSheet("color: black")
-
-        font2 = QFont()
-        font2.setPointSize(10)  # 设置字体大小
-        font2.setBold(True)     # 设置为粗体
-        label2.setFont(font2)
+        self.label2 = self.create_label("Port", "Segoe UI", 10, True, "#000080")
 
         # 串口的下拉选框
-        COM = QComboBox(self)
-        COM.addItem('COM1')
-        COM.addItem('COM2')
-        COM.addItem('COM3')
-        COM.addItem('COM4')
-        COM.addItem('COM5')
-        COM.addItem('COM6')
-        COM.setMinimumWidth(90)
-        COM.setMaximumWidth(90)
-        COM.setStyleSheet("background-color: #F0F8FF; color: black")
-        # 将COM和BAUD作为类的成员变量
-        self.COM = COM
+        self.COM = QComboBox(self)
+        self.COM.addItem('COM1')
+        self.COM.addItem('COM2')
+        self.COM.addItem('COM3')
+        self.COM.addItem('COM4')
+        self.COM.addItem('COM5')
+        self.COM.addItem('COM6')
+        self.COM.setMinimumWidth(70)
+        self.COM.setMaximumWidth(70)
+        self.COM.setStyleSheet("""
+            QComboBox {
+                background-color: #F0F8FF;  /* 淡蓝色背景 */
+                color: #2e2e2e;             /* 深灰色字体 */
+                border: 1px solid #A9A9A9;  /* 边框 */
+                border-radius: 4px;         /* 圆角边框 */
+                padding: 2px 5px;           /* 内边距 */
+            }
+            QComboBox:hover {
+                border-color: #87CEEB;     /* 悬浮时边框颜色变化 */
+            }
+            QComboBox::drop-down {
+                border: none;              /* 下拉箭头的边框 */
+            }
+            QComboBox QAbstractItemView {
+                selection-background-color: #ADD8E6; /* 选中项的背景颜色 */
+            }
+        """)
 
         # 将串口选择的水平布局设置
-        PortLayout = QHBoxLayout()
-        PortLayout.addWidget(label2)
-        PortLayout.addWidget(COM)
-
+        self.PortLayout = QHBoxLayout()
+        self.PortLayout.addWidget(self.label2)
+        self.PortLayout.addWidget(self.COM)
 
         # 波特率选择
-        label3 = QLabel("Baudrate")
-        label3.setStyleSheet("color: black")
-        label3.setFont(font2)
+        self.label3 = self.create_label("Baudrate", "Segoe UI", 10, True, "#000080")
         # 串口的下拉选框
-        BAUD = QComboBox(self)
-        BAUD.addItem('2400', 2400)
-        BAUD.addItem('4800', 4800)
-        BAUD.addItem('9600', 9600)
-        BAUD.addItem('19200', 19200)
-        BAUD.addItem('38400', 38400)
-        BAUD.addItem('57600', 57600)
-        BAUD.addItem('115200', 115200)
-        BAUD.addItem('128000', 128000)
-        BAUD.addItem('230400', 230400)
-        BAUD.addItem('256000', 256000)
-        BAUD.setMinimumWidth(90)
-        BAUD.setMaximumWidth(90)
-        BAUD.setStyleSheet("background-color: #F0F8FF; color: black")
-        # 将COM和BAUD作为类的成员变量
-        self.BAUD = BAUD
+        self.BAUD = QComboBox(self)
+        self.BAUD.addItem('2400', 2400)
+        self.BAUD.addItem('4800', 4800)
+        self.BAUD.addItem('9600', 9600)
+        self.BAUD.addItem('19200', 19200)
+        self.BAUD.addItem('38400', 38400)
+        self.BAUD.addItem('57600', 57600)
+        self.BAUD.addItem('115200', 115200)
+        self.BAUD.addItem('128000', 128000)
+        self.BAUD.addItem('230400', 230400)
+        self.BAUD.addItem('256000', 256000)
+        self.BAUD.setMinimumWidth(70)
+        self.BAUD.setMaximumWidth(70)
+        self.BAUD.setStyleSheet("""
+            QComboBox {
+                background-color: #F0F8FF;  /* 淡蓝色背景 */
+                color: #2e2e2e;             /* 深灰色字体 */
+                border: 1px solid #A9A9A9;  /* 边框 */
+                border-radius: 4px;         /* 圆角边框 */
+                padding: 2px 5px;           /* 内边距 */
+            }
+            QComboBox:hover {
+                border-color: #87CEEB;     /* 悬浮时边框颜色变化 */
+            }
+            QComboBox::drop-down {
+                border: none;              /* 下拉箭头的边框 */
+            }
+            QComboBox QAbstractItemView {
+                selection-background-color: #ADD8E6; /* 选中项的背景颜色 */
+            }
+        """)
 
         # 将波特率选择的水平布局设置
-        BAUDLayout = QHBoxLayout()
-        BAUDLayout.addWidget(label3)
-        BAUDLayout.addWidget(BAUD)
+        self.BAUDLayout = QHBoxLayout()
+        self.BAUDLayout.addWidget(self.label3)
+        self.BAUDLayout.addWidget(self.BAUD)
 
         # 开串口选择
         self.indicatior = QLabel()
+        self.indicatior.setStyleSheet("""
+            QLabel {
+                background-color: #D3D3D3;  /* 淡灰色背景 */
+                border-radius: 10px;        /* 设置圆角为高度的一半 */
+                width:  20px;                /* 设置宽度 */
+                height: 20px;               /* 设置高度 */
+            }
+        """)
         self.indicatior.setFixedSize(20, 20)
-        self.indicatior.setStyleSheet("background-color: gray; border-radius: 10px;")
 
-        post_com_button = QPushButton("Open Serial")
-        post_com_button.setFixedSize(80, 20)  # 设置按钮1的尺寸
-        post_com_button.setStyleSheet("background-color: #F0F8FF; color: black")
-        post_com_button.clicked.connect(self.PostSerialInfo)
+        self.post_com_button = self.create_button("Open", 50, 30)
+        self.post_com_button.clicked.connect(self.PostSerialInfo)
 
         # 将开启选择的水平布局设置
-        CommunicaitonLayout = QHBoxLayout()
-        CommunicaitonLayout.addWidget(self.indicatior)
-        CommunicaitonLayout.addWidget(post_com_button)
+        self.CommunicaitonLayout = QHBoxLayout()
+        self.CommunicaitonLayout.addWidget(self.indicatior)
+        self.CommunicaitonLayout.addWidget(self.post_com_button)
 
         # 创建控制面板中串口通讯框架的布局
-        Controlseparator_Frame1_Layout = QVBoxLayout(Controlseparator_Frame1)
-        Controlseparator_Frame1_Layout.addWidget(label1)
-        Controlseparator_Frame1_Layout.addLayout(PortLayout)
-        Controlseparator_Frame1_Layout.addLayout(BAUDLayout)
-        Controlseparator_Frame1_Layout.addLayout(CommunicaitonLayout)
+        self.Controlseparator_Frame1_Layout = QVBoxLayout(self.Controlseparator_Frame1)
+        self.Controlseparator_Frame1_Layout.addWidget(self.label1)
+        self.Controlseparator_Frame1_Layout.addLayout(self.PortLayout)
+        self.Controlseparator_Frame1_Layout.addLayout(self.BAUDLayout)
+        self.Controlseparator_Frame1_Layout.addLayout(self.CommunicaitonLayout)
 
         # 控制面板中的框架2
-        #创建控制面板中电机控制框架
-        Controlseparator_Frame2 = QFrame(Controlseparator)
-        Controlseparator_Frame2.setStyleSheet("background-color: #F5FFFA;")
-        Controlseparator_Frame2.setFrameShape(QFrame.Shape.Box)
-        Controlseparator_Frame2.setFrameShadow(QFrame.Shadow.Sunken)
-        Controlseparator_Frame2.setFixedSize(210, 400)
+        # 创建控制面板中电机控制框架
+        self.Controlseparator_Frame2 = QFrame(self.Controlseparator)
+        self.Controlseparator_Frame2.setFrameShape(QFrame.Shape.Box)
+        self.Controlseparator_Frame2.setFrameShadow(QFrame.Shadow.Sunken)
+        self.Controlseparator_Frame2.setFixedSize(160, 400)
 
-        label5 = QLabel("PID Setting")
-        label5.setFixedSize(180, 15)
-        label5.setStyleSheet("color: black")
-        label5.setFont(font1)
+        self.label5 = self.create_label("PID Setting", "Segoe UI", 10, True, "#000080")
 
         # P的控制框
-        lable_p = QLabel("P")
-        lable_p.setFixedSize(20, 15)
-        lable_p.setStyleSheet("color: black")
-        lable_p.setFont(font1)
+        self.lable_p = self.create_label("P", "Segoe UI", 10, True, "#000080")
 
-        self.P_RPMEdit = QLineEdit(self)
-        self.P_RPMEdit.setFixedSize(100, 22)
-        self.P_RPMEdit.setPlaceholderText('1.00')
-        self.P_RPMEdit.setStyleSheet("background-color: #F0F8FF; color: black")
+        self.P_RPMEdit = self.create_line_edit("1.00", 60, 22)
 
         # P的控制框的水平布局设置
-        P_Layout = QHBoxLayout()
-        P_Layout.addWidget(lable_p)
-        P_Layout.addWidget(self.P_RPMEdit)
-        P_Layout.setSpacing(2)
+        self.P_Layout = QHBoxLayout()
+        self.P_Layout.addWidget(self.lable_p)
+        self.P_Layout.addWidget(self.P_RPMEdit)
+        self.P_Layout.setSpacing(0)
 
         # I的控制框
-        lable_I = QLabel("I")
-        lable_I.setFixedSize(20, 15)
-        lable_I.setStyleSheet("color: black")
-        lable_I.setFont(font1)
-
-        self.I_RPMEdit = QLineEdit(self)
-        self.I_RPMEdit.setFixedSize(100, 22)
-        self.I_RPMEdit.setPlaceholderText('1.00')
-        self.I_RPMEdit.setStyleSheet("background-color: #F0F8FF; color: black")
+        self.lable_I = self.create_label("I", "Segoe UI", 10, True, "#000080")
+        self.I_RPMEdit = self.create_line_edit("1.00", 60, 22)
 
         # I的控制框的水平布局设置
-        I_Layout = QHBoxLayout()
-        I_Layout.addWidget(lable_I)
-        I_Layout.addWidget(self.I_RPMEdit)
-        I_Layout.setSpacing(2)
+        self.I_Layout = QHBoxLayout()
+        self.I_Layout.addWidget(self.lable_I)
+        self.I_Layout.addWidget(self.I_RPMEdit)
+        self.I_Layout.setSpacing(2)
 
         # D的控制框
-        lable_D = QLabel("D")
-        lable_D.setFixedSize(20, 15)
-        lable_D.setStyleSheet("color: black")
-        lable_D.setFont(font1)
-
-        self.D_RPMEdit = QLineEdit(self)
-        self.D_RPMEdit.setFixedSize(100, 22)
-        self.D_RPMEdit.setPlaceholderText('1.00')
-        self.D_RPMEdit.setStyleSheet("background-color: #F0F8FF; color: black")
+        self.lable_D = self.create_label("D", "Segoe UI", 10, True, "#000080")
+        self.D_RPMEdit = self.create_line_edit("1.00", 60, 22)
 
         # D的控制框的水平布局设置
-        D_Layout = QHBoxLayout()
-        D_Layout.addWidget(lable_D)
-        D_Layout.addWidget(self.D_RPMEdit)
-        D_Layout.setSpacing(2)
+        self.D_Layout = QHBoxLayout()
+        self.D_Layout .addWidget(self.lable_D)
+        self.D_Layout .addWidget(self.D_RPMEdit)
+        self.D_Layout .setSpacing(2)
 
         # 发送PID按钮
-        PIDButton = QPushButton("Send PID")
-        PIDButton.setFixedSize(80, 20)
-        PIDButton.setStyleSheet("background-color: #F0F8FF; color: black")
-        PIDButton.clicked.connect(lambda: self.PostPID(0x10, self.P_RPMEdit.text(), self.I_RPMEdit.text(), self.D_RPMEdit.text()))
+        self.PIDButton = self.create_button("Send PID", 80, 25)
+        self.PIDButton.clicked.connect(lambda: self.PostPID(0x10, self.P_RPMEdit.text(), self.I_RPMEdit.text(), self.D_RPMEdit.text()))
 
-        PIDButton_Layout = QHBoxLayout()
-        PIDButton_Layout.addWidget(PIDButton)
-        PIDButton_Layout.setContentsMargins(30, 0, 30, 0)
+        self.PIDButton_Layout = QHBoxLayout()
+        self.PIDButton_Layout.addWidget(self.PIDButton)
+        self.PIDButton_Layout.setContentsMargins(30, 0, 30, 0)
 
         # 转速设定
-        lable_speed = QLabel("Speed")
-        lable_speed.setFixedSize(65, 15)
-        lable_speed.setStyleSheet("color: black")
-        lable_speed.setFont(font1)
+        self.lable_speed = self.create_label("Speed", "Segoe UI", 10, True, "#000080")
+        self.SpeedRPMEdit = self.create_line_edit("100", 60, 22)
 
-        self.SpeedRPMEdit = QLineEdit(self)
-        self.SpeedRPMEdit.setFixedSize(60, 22)
-        self.SpeedRPMEdit.setPlaceholderText('100')
-        self.SpeedRPMEdit.setStyleSheet("background-color:#F0F8FF; color: black")
-
-        SpeedGo = QPushButton("Go")
-        SpeedGo.setFixedSize(50, 20)
-        SpeedGo.setStyleSheet("background-color: #F0F8FF; color: black")
-        SpeedGo.clicked.connect(lambda: self.PostCommandInfo(0x11, self.SpeedRPMEdit.text()))
+        self.SpeedGo = self.create_button("Go", 50, 25)
+        self.SpeedGo.clicked.connect(lambda: self.PostCommandInfo(0x11, self.SpeedRPMEdit.text()))
 
         # speed的控制框的水平布局设置
-        speed_Layout = QHBoxLayout()
-        speed_Layout.addWidget(lable_speed)
-        speed_Layout.addWidget(self.SpeedRPMEdit)
-        speed_Layout.addWidget(SpeedGo)
-        speed_Layout.setSpacing(2)
+        self.speed_Layout = QHBoxLayout()
+        self.speed_Layout.addWidget(self.SpeedRPMEdit)
+        self.speed_Layout.addWidget(self.SpeedGo)
+        self.speed_Layout.setSpacing(2)
 
         # 位置设定
-        lable_location = QLabel("Position")
-        lable_location.setFixedSize(65, 15)
-        lable_location.setStyleSheet("color: black")
-        lable_location.setFont(font1)
+        self.lable_location = self.create_label("Position", "Segoe UI", 10, True, "#000080")
+        self.LocationRPMEdit = self.create_line_edit("100", 60, 22)
 
-        self.LocationRPMEdit = QLineEdit(self)
-        self.LocationRPMEdit.setFixedSize(60, 22)
-        self.LocationRPMEdit.setPlaceholderText('100')
-        self.LocationRPMEdit.setStyleSheet("background-color:#F0F8FF; color: black")
-
-        LocationGo = QPushButton("Go")
-        LocationGo.setFixedSize(50, 20)
-        LocationGo.setStyleSheet("background-color: #F0F8FF; color: black")
-        LocationGo.clicked.connect(lambda: self.PostCommandInfo(0x12, self.LocationRPMEdit.text()))
+        self.LocationGo = self.create_button("Go", 50, 25)
+        self.LocationGo.clicked.connect(lambda: self.PostCommandInfo(0x12, self.LocationRPMEdit.text()))
 
         # speed的控制框的水平布局设置
-        Location_Layout = QHBoxLayout()
-        Location_Layout.addWidget(lable_location)
-        Location_Layout.addWidget(self.LocationRPMEdit)
-        Location_Layout.addWidget(LocationGo)
-        Location_Layout.setSpacing(2)
+        self.Location_Layout = QHBoxLayout()
+        self.Location_Layout.addWidget(self.LocationRPMEdit)
+        self.Location_Layout.addWidget(self.LocationGo)
+        self.Location_Layout.setSpacing(2)
 
         # 方向控制以及停止按钮
-        LeftButton = QPushButton("<-")
-        LeftButton.setFixedSize(50, 20)
-        LeftButton.setStyleSheet("background-color: #F0F8FF; color: black")
-        LeftButton.clicked.connect(lambda: self.PostCommandInfo(0x13, 0x0))
+        self.LeftButton = self.create_button("<-", 50, 25)
+        self.LeftButton.clicked.connect(lambda: self.PostCommandInfo(0x13, 0x0))
 
-        StopButton = QPushButton("stop")
-        StopButton.setFixedSize(50, 20)
-        StopButton.setStyleSheet("background-color: #F0F8FF; color: black")
-        StopButton.clicked.connect(lambda: self.PostCommandInfo(0x14, 0x0))
+        self.StopButton = self.create_button("Stop", 50, 25)
+        self.StopButton.clicked.connect(lambda: self.PostCommandInfo(0x14, 0x0))
 
-        RightButton = QPushButton("->")
-        RightButton.setFixedSize(50, 20)
-        RightButton.setStyleSheet("background-color: #F0F8FF; color: black")
-        RightButton.clicked.connect(lambda: self.PostCommandInfo(0x15, 0x0))
+        self.RightButton = self.create_button("->", 50, 25)
+        self.RightButton.clicked.connect(lambda: self.PostCommandInfo(0x15, 0x0))
 
-
-        orition_Layout = QHBoxLayout()
-        orition_Layout.addWidget(LeftButton)
-        orition_Layout.addWidget(StopButton)
-        orition_Layout.addWidget(RightButton)
-        orition_Layout.setSpacing(2)
+        self.orition_Layout = QHBoxLayout()
+        self.orition_Layout.addWidget(self.LeftButton)
+        self.orition_Layout.addWidget(self.StopButton)
+        self.orition_Layout.setSpacing(0)
 
         # 重置按钮
-        ResetButton = QPushButton("Reset")
-        ResetButton.setFixedSize(50, 20)
-        ResetButton.setStyleSheet("background-color: #F0F8FF; color: black")
-        ResetButton.clicked.connect(lambda: self.PostCommandInfo(0x16, 0x0))
+        self.ResetButton = self.create_button("Reset", 50, 25)
+        self.ResetButton.clicked.connect(lambda: self.PostCommandInfo(0x16, 0x0))
 
-        ResetButton_Layout = QHBoxLayout()
-        ResetButton_Layout.addWidget(ResetButton)
-        ResetButton_Layout.setContentsMargins(120,0,0,0)
+        self.ResetButton_Layout = QHBoxLayout()
+        self.ResetButton_Layout.addWidget(self.RightButton)
+        self.ResetButton_Layout.addWidget(self.ResetButton)
+
 
         # 创建控制面板中电机控制框架的布局
-        Controlseparator_Frame2_Layout = QVBoxLayout(Controlseparator_Frame2)
-        Controlseparator_Frame2_Layout.addWidget(label5)
-        Controlseparator_Frame2_Layout.addLayout(P_Layout)
-        Controlseparator_Frame2_Layout.addLayout(I_Layout)
-        Controlseparator_Frame2_Layout.addLayout(D_Layout)
-        Controlseparator_Frame2_Layout.addLayout(PIDButton_Layout)
-        Controlseparator_Frame2_Layout.addLayout(speed_Layout)
-        Controlseparator_Frame2_Layout.addLayout(Location_Layout)
-        Controlseparator_Frame2_Layout.addLayout(orition_Layout)
-        Controlseparator_Frame2_Layout.addLayout(ResetButton_Layout)
-        Controlseparator_Frame2_Layout.setSpacing(0)
+        self.Controlseparator_Frame2_Layout = QVBoxLayout(self.Controlseparator_Frame2)
+        self.Controlseparator_Frame2_Layout.addWidget(self.label5)
+        self.Controlseparator_Frame2_Layout.addLayout(self.P_Layout)
+        self.Controlseparator_Frame2_Layout.addLayout(self.I_Layout)
+        self.Controlseparator_Frame2_Layout.addLayout(self.D_Layout )
+        self.Controlseparator_Frame2_Layout.addLayout(self.PIDButton_Layout)
+        self.Controlseparator_Frame2_Layout.addWidget(self.lable_speed)
+        self.Controlseparator_Frame2_Layout.addLayout(self.speed_Layout)
+        self.Controlseparator_Frame2_Layout.addWidget(self.lable_location)
+        self.Controlseparator_Frame2_Layout.addLayout(self.Location_Layout)
+        self.Controlseparator_Frame2_Layout.addLayout(self.orition_Layout)
+        self.Controlseparator_Frame2_Layout.addLayout(self.ResetButton_Layout)
+        self.Controlseparator_Frame2_Layout.setSpacing(0)
 
         # 创建垂直布局将两个框架添加到布局中
-        ConrtolLayout = QVBoxLayout(Controlseparator)
-        ConrtolLayout.addWidget(Controlseparator_Frame1)
-        ConrtolLayout.addWidget(Controlseparator_Frame2)
-        ConrtolLayout.setSpacing(5)
+        self.ConrtolLayout = QVBoxLayout(self.Controlseparator)
+        self.ConrtolLayout.addWidget(self.Controlseparator_Frame1)
+        self.ConrtolLayout.addWidget(self.Controlseparator_Frame2)
+        self.ConrtolLayout.setSpacing(5)
 
         ######## 显示模块的开始
         # 创建显示端的实线框架（QFrame）作为分隔区域
-        Showseparator = QFrame(self)
-        Showseparator.setStyleSheet("background-color: #F5FFFA;")
-        Showseparator.setFrameShape(QFrame.Shape.Box)
-        Showseparator.setFrameShadow(QFrame.Shadow.Sunken)
-        Showseparator.setFixedSize(900, 700)
+        self.Showseparator = QFrame(self)
+        self.Showseparator.setFixedSize(700, 700)
+        self.Showseparator.setStyleSheet("""
+                    QFrame {
+                        background-color: #E3E3E3;  /* 淡灰色背景 */
+                        border-radius: 10px;  /* 圆角边框 */
+                        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);  /* 轻微阴影 */
+                    }
+                """)
 
-        #创建显示分区1
-        Showseparator_Frame1 = QFrame(Showseparator)
-        Showseparator_Frame1.setStyleSheet("background-color: #F5FFFA;")
-        Showseparator_Frame1.setFrameShape(QFrame.Shape.Box)
-        Showseparator_Frame1.setFrameShadow(QFrame.Shadow.Sunken)
+        # 创建显示分区1
+        self.Showseparator_Frame1 = QFrame(self.Showseparator)
+        self.Showseparator_Frame1.setStyleSheet("""
+                    QFrame {
+                        background-color: #E3E3E3;  /* 淡灰色背景 */
+                        border-radius: 10px;  /* 圆角边框 */
+                        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);  /* 轻微阴影 */
+                    }
+                """)
 
         """ 创建图形控件 """
         self.graphWidget1 = pg.PlotWidget()
         self.setupGraphWidget(self.graphWidget1, "Speed/RPM", "rpm", "time/s")
 
         # 创建电机1显示布局
-        Showseparator_Frame1_Layout = QVBoxLayout(Showseparator_Frame1)
-        Showseparator_Frame1_Layout.addWidget(self.graphWidget1)
+        self.Showseparator_Frame1_Layout = QVBoxLayout(self.Showseparator_Frame1)
+        self.Showseparator_Frame1_Layout.addWidget(self.graphWidget1)
 
         # 创建显示分区2
-        Showseparator_Frame2 = QFrame(Showseparator)
-        Showseparator_Frame2.setStyleSheet("background-color: #F5FFFA;")
-        Showseparator_Frame2.setFrameShape(QFrame.Shape.Box)
-        Showseparator_Frame2.setFrameShadow(QFrame.Shadow.Sunken)
+        self.Showseparator_Frame2 = QFrame(self.Showseparator)
+        self.Showseparator_Frame2.setStyleSheet("""
+                    QFrame {
+                        background-color: #E3E3E3;  /* 淡灰色背景 */
+                        border-radius: 10px;  /* 圆角边框 */
+                        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);  /* 轻微阴影 */
+                    }
+                """)
 
         self.graphWidget2 = pg.PlotWidget()
         self.setupGraphWidget(self.graphWidget2, "Position", "degree", "time/s")
 
         # 创建电机2显示布局
-        Showseparator_Frame2_Layout = QVBoxLayout(Showseparator_Frame2)
-        Showseparator_Frame2_Layout.addWidget(self.graphWidget2)
+        self.Showseparator_Frame2_Layout = QVBoxLayout(self.Showseparator_Frame2)
+        self.Showseparator_Frame2_Layout.addWidget(self.graphWidget2)
 
         # 创建垂直布局将两个框架添加到布局中
-        ShowLayout = QVBoxLayout(Showseparator)
-        ShowLayout.addWidget(self.graphWidget1)
-        ShowLayout.addWidget(self.graphWidget2)
-        ShowLayout.setSpacing(0)
+        self.ShowLayout = QVBoxLayout(self.Showseparator)
+        self.ShowLayout.addWidget(self.graphWidget1)
+        self.ShowLayout.addWidget(self.graphWidget2)
+        self.ShowLayout.setSpacing(0)
+
+        # 视频播放器组件
+        self.mediaPlayer = QMediaPlayer()
+        self.videoWidget = QVideoWidget()
+        self.mediaPlayer.setVideoOutput(self.videoWidget)
+        self.videoWidget.setAspectRatioMode(Qt.AspectRatioMode.IgnoreAspectRatio)
+        # 加载视频文件
+        self.mediaPlayer.setSource(QUrl.fromLocalFile("../Icons/cool3.mp4"))
+        self.mediaPlayer.play()
+        # 连接信号
+        self.mediaPlayer.mediaStatusChanged.connect(self.media_status_changed)
+        self.videoWidget.setFixedSize(400, 350)
 
         # 创建水平布局
-        Sub2Mainlayout = QHBoxLayout()
-        Sub2Mainlayout.addWidget(Controlseparator)
-        Sub2Mainlayout.addWidget(Showseparator)
+        self.Sub2Mainlayout = QHBoxLayout()
+        self.Sub2Mainlayout .addWidget(self.Controlseparator)
+        self.Sub2Mainlayout .addWidget(self.Showseparator)
+        self.Sub2Mainlayout .addWidget(self.videoWidget)
+
 
         # 将布局设置为子窗口的布局
-        self.setLayout(Sub2Mainlayout)
+        self.setLayout(self.Sub2Mainlayout )
+
+    def create_button(self, text, width, height):
+        """
+        创建一个定制样式的 QPushButton。
+
+        :param text: 按钮显示的文本。
+        :param width: 按钮的宽度。
+        :param height: 按钮的高度。
+        :return: QPushButton对象
+        """
+        button = QPushButton(text)
+        button.setFixedSize(width, height)
+        button.setStyleSheet("""
+            QPushButton {
+                background-color: #F0F8FF;  /* 淡蓝色背景 */
+                color: black;               /* 文字颜色 */
+                border-radius: 5px;         /* 圆角 */
+                padding: 5px;               /* 内边距 */
+                border: 1px solid #A9A9A9;  /* 边框 */
+            }
+            QPushButton:hover {
+                background-color: #ADD8E6;  /* 悬浮时背景颜色变化 */
+            }
+            QPushButton:pressed {
+                background-color: #87CEEB;  /* 按下时背景颜色变化 */
+            }
+        """)
+        return button
+
+    def create_line_edit(self, placeholder_text, width, height):
+        """
+        创建一个定制样式的 QLineEdit。
+
+        :param placeholder_text: 占位符文本。
+        :param width: 输入框的宽度。
+        :param height: 输入框的高度。
+        :return: QLineEdit对象
+        """
+        line_edit = QLineEdit()
+        line_edit.setFixedSize(width, height)
+        line_edit.setPlaceholderText(placeholder_text)
+        line_edit.setStyleSheet("""
+            QLineEdit {
+                background-color: #F0F8FF;  /* 输入框的背景颜色 */
+                color: black;               /* 输入文字的颜色 */
+                border: 1px solid #A9A9A9;  /* 边框颜色和大小 */
+                border-radius: 5px;         /* 边框圆角 */
+                padding: 3px;               /* 内边距 */
+            }
+            QLineEdit:focus {
+                border: 1px solid #87CEEB;  /* 焦点时边框颜色 */
+            }
+            QLineEdit:hover {
+                border: 1px solid #ADD8E6;  /* 鼠标悬停时边框颜色 */
+            }
+        """)
+        return line_edit
+
+    def create_label(self, text, font_name="Segoe UI", font_size=10, bold=False, color="#000000"):
+        """
+        创建一个具有特定字体和颜色的 QLabel 对象。
+
+        :param text: 标签上显示的文本。
+        :param font_name: 字体名称，默认为 'Segoe UI'。
+        :param font_size: 字体大小，默认为 10。
+        :param bold: 是否加粗，默认为 False。
+        :param color: 字体颜色，默认为黑色。
+        :return: QLabel对象
+        """
+        label = QLabel(text)
+        font = QFont(font_name, font_size)
+        font.setBold(bold)
+        label.setFont(font)
+        label.setFixedSize(170, 20)
+        label.setStyleSheet(f"color: {color};")
+        return label
 
     def setupGraphWidget(self, graphWidget, title, ylabel, xlabel):
         graphWidget.setBackground('#F5FFFA')
-        graphWidget.setTitle(title, color="black", size="15pt")
-        graphWidget.setLabel('left', ylabel, color='b', size=30)
-        graphWidget.setLabel('bottom', xlabel, color='b', size=30)
+        graphWidget.setTitle(title, color="#000080", size="15pt")
+        graphWidget.setLabel('left', ylabel, color="#000080", size=30)
+        graphWidget.setLabel('bottom', xlabel, color="#000080", size=30)
         graphWidget.showGrid(x=True, y=True)
 
 
@@ -400,14 +469,28 @@ class SubWindow2(QDialog):
             if success:
                 self.COM.setDisabled(False)
                 self.BAUD.setDisabled(False)
-                self.indicatior.setStyleSheet("background-color: gray; border-radius: 10px;")
+                self.indicatior.setStyleSheet("""
+                    QLabel {
+                        background-color: #D3D3D3;  /* 淡灰色背景 */
+                        border-radius: 10px;        /* 设置圆角为高度的一半 */
+                        width:  20px;                /* 设置宽度 */
+                        height: 20px;               /* 设置高度 */
+                    }
+                """)
                 self.show_auto_close_dialog("Serial State: " + message, 1000)
             else:
                 self.show_auto_close_dialog("Serial State: " + message, 1000)
         else:
             success, message = self.OpenSeri.open_ser(self.selected_port, self.selected_baud)
             if success:
-                self.indicatior.setStyleSheet("background-color: green; border-radius: 10px;")
+                self.indicatior.setStyleSheet("""
+                    QLabel {
+                        background-color: #00CD66;  /* 淡绿色背景 */
+                        border-radius: 10px;        /* 设置圆角为高度的一半 */
+                        width:  20px;                /* 设置宽度 */
+                        height: 20px;               /* 设置高度 */
+                    }
+                """)
                 self.COM.setDisabled(True)
                 self.BAUD.setDisabled(True)
                 self.show_auto_close_dialog("Serial State: " + message, 1000)
@@ -519,6 +602,11 @@ class SubWindow2(QDialog):
         # 更新图形
         self.graphWidget1.plot(self.x, self.y, pen=pg.mkPen(color=(255, 0, 0), width=5))
 
+    def media_status_changed(self, status):
+        # 检查媒体播放状态
+        if status == QMediaPlayer.MediaStatus.EndOfMedia:
+            self.mediaPlayer.play()  # 重复播放视频
+
 class SubWindow3(QDialog):
     def __init__(self):
         super().__init__()
@@ -565,7 +653,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Peristaltic Pump Debugging Assistant")
+        self.setWindowTitle("神策电机调试助手")
         self.setGeometry(300, 200, 1000, 800)
 
         # 主界面容器
@@ -608,7 +696,7 @@ class MainWindow(QMainWindow):
         self.createButton("网络调试助手", button_layout, lambda: self.stacked_widget.setCurrentWidget(self.subWindow4))
 
         # 加载视频文件
-        self.mediaPlayer.setSource(QUrl.fromLocalFile("../Icons/cool.mp4"))
+        self.mediaPlayer.setSource(QUrl.fromLocalFile("../Icons/COOL2.mp4"))
         self.mediaPlayer.play()
         # 连接信号
         self.mediaPlayer.mediaStatusChanged.connect(self.media_status_changed)
@@ -624,7 +712,19 @@ class MainWindow(QMainWindow):
     def createButton(self, text, layout, callback):
         button = QPushButton(text)
         button.setFixedSize(300, 50)
-        button.setStyleSheet("background-color: gray; color: white;")
+        button.setStyleSheet("""
+            QPushButton {
+                background-color: #5CACEE;  # 一个明亮的天蓝色
+                color: white;
+                border-radius: 10px;  # 圆角
+                padding: 10px;
+                margin: 5px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3B9C9C;  # 悬停时的颜色变化
+            }
+        """)
         button.clicked.connect(callback)
         layout.addWidget(button)
 
