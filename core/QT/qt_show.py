@@ -561,109 +561,6 @@ class SubWindow4(QDialog):
         # 将布局设置为子窗口的布局
         self.setLayout(layout)
 
-
-# class MainWindow(QMainWindow):
-#     def __init__(self):
-#         super().__init__()
-#
-#         self.setWindowTitle("Peristaltic Pump Debugging Assistant")
-#         self.setGeometry(300, 200, 1000, 800)
-#         # 创建一个主界面容器
-#         main_widget = QWidget()
-#         self.setCentralWidget(main_widget)
-#
-#         # 创建垂直布局
-#         main_layout = QVBoxLayout()
-#
-#         # 设置主窗口容器的布局为垂直布局
-#         main_widget.setLayout(main_layout)
-#
-#         # 创建按钮布局
-#         button_layout = QHBoxLayout()
-#
-#         # 创建四个按钮
-#         button1 = QPushButton("串口调试助手")
-#         button1.setFixedSize(300, 50)  # 设置按钮1的尺寸
-#         button1.clicked.connect(self.open_window1)
-#         button1.setStyleSheet("background-color: gray; color: white;")
-#         button_layout.addWidget(button1)
-#
-#
-#         button2 = QPushButton("PID调试助手")
-#         button2.setFixedSize(300, 50)  # 设置按钮2的尺寸
-#         button2.clicked.connect(self.open_window2)
-#         button2.setStyleSheet("background-color: gray; color: white;")
-#         button_layout.addWidget(button2)
-#
-#         button3 = QPushButton("摄像头调试助手")
-#         button3.setFixedSize(300, 50)  # 设置按钮3的尺寸
-#         button3.clicked.connect(self.open_window3)
-#         button3.setStyleSheet("background-color: gray; color: white;")
-#         button_layout.addWidget(button3)
-#
-#         button4 = QPushButton("网络调试助手")
-#         button4.setFixedSize(300, 50)  # 设置按钮4的尺寸
-#         button4.clicked.connect(self.open_window4)
-#         button4.setStyleSheet("background-color: gray; color: white;")
-#         button_layout.addWidget(button4)
-#         button_layout.setSpacing(0)
-#
-#         # 创建视频播放器组件
-#         self.mediaPlayer = QMediaPlayer()
-#         self.videoWidget = QVideoWidget()
-#
-#         # 设置视频播放器输出
-#         self.mediaPlayer.setVideoOutput(self.videoWidget)
-#         # 加载视频文件
-#         self.mediaPlayer.setSource(QUrl.fromLocalFile("../Icons/cool.mp4"))
-#         # 连接信号
-#         self.mediaPlayer.mediaStatusChanged.connect(self.media_status_changed)
-#         # 开始播放视频
-#         self.mediaPlayer.play()
-#
-#         # 添加水平布局到垂直布局
-#         main_layout.addLayout(button_layout)
-#         # 添加视频播放器到布局
-#         main_layout.addWidget(self.videoWidget)
-#
-#         # 设置主窗口的背景颜色
-#         self.setStyleSheet("background-color: #F5FFFA;")
-#
-#         # 创建一个堆叠窗口，用于显示子窗口
-#         self.stacked_widget = QStackedWidget()
-#         main_layout.addWidget(self.stacked_widget)
-#         main_layout.setSpacing(0)
-#
-#     def media_status_changed(self, status):
-#         if status == QMediaPlayer.MediaStatus.EndOfMedia:
-#             self.mediaPlayer.play()
-#
-#     def open_window1(self):
-#         sub_window1 = SubWindow1()
-#         self.stacked_widget.addWidget(sub_window1)
-#         self.stacked_widget.setCurrentWidget(sub_window1)
-#         self.setWindowTitle("串口调试助手")
-#
-#     def open_window2(self):
-#         sub_window2 = SubWindow2()
-#         self.stacked_widget.addWidget(sub_window2)
-#         self.stacked_widget.setCurrentWidget(sub_window2)
-#         self.setWindowTitle("PID调试助手")
-#
-#
-#     def open_window3(self):
-#         sub_window3 = SubWindow3()
-#         self.stacked_widget.addWidget(sub_window3)
-#         self.stacked_widget.setCurrentWidget(sub_window3)
-#         self.setWindowTitle("摄像头调试助手")
-#
-#     def open_window4(self):
-#         sub_window4 = SubWindow4()
-#         self.stacked_widget.addWidget(sub_window4)
-#         self.stacked_widget.setCurrentWidget(sub_window4)
-#         self.setWindowTitle("网络调试助手")
-
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -697,24 +594,19 @@ class MainWindow(QMainWindow):
 
         self.stacked_widget.addWidget(self.videoWidget)
         self.mediaPlayer.setVideoOutput(self.videoWidget)
+        self.videoWidget.setAspectRatioMode(Qt.AspectRatioMode.IgnoreAspectRatio)
         # 创建堆叠窗口
         self.stacked_widget.addWidget(self.subWindow1)
         self.stacked_widget.addWidget(self.subWindow2)
         self.stacked_widget.addWidget(self.subWindow3)
         self.stacked_widget.addWidget(self.subWindow4)
 
-        # main_layout.addWidget(self.stacked_widget)
 
         self.createButton("串口调试助手", button_layout, lambda: self.stacked_widget.setCurrentWidget(self.subWindow1))
         self.createButton("PID调试助手", button_layout, lambda: self.stacked_widget.setCurrentWidget(self.subWindow2))
         self.createButton("摄像头调试助手", button_layout, lambda: self.stacked_widget.setCurrentWidget(self.subWindow3))
         self.createButton("网络调试助手", button_layout, lambda: self.stacked_widget.setCurrentWidget(self.subWindow4))
 
-        # 视频播放器组件
-        # self.mediaPlayer = QMediaPlayer()
-        # self.videoWidget = QVideoWidget()
-        # self.mediaPlayer.setVideoOutput(self.videoWidget)
-        # 视频文件路径
         # 加载视频文件
         self.mediaPlayer.setSource(QUrl.fromLocalFile("../Icons/cool.mp4"))
         self.mediaPlayer.play()
