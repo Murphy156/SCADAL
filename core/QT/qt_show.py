@@ -6,7 +6,7 @@ from PyQt6.QtCore import *
 import pyqtgraph as pg
 from PyQt6.QtMultimedia import QMediaPlayer
 from PyQt6.QtMultimediaWidgets import QVideoWidget
-from PyQt6.QtCore import QUrl
+from PyQt6.QtCore import QUrl, pyqtBoundSignal
 # from random import randint
 
 class SubWindow1(QDialog):
@@ -508,7 +508,6 @@ class SubWindow2(QDialog):
     def PostCommandInfo(self, contcommand, parameter):
         try:
             HeaderCode = 0x55AA
-            CombinPost = SerialCommunication()
             if parameter == '':
                 self.show_auto_close_dialog("Error: The parameters is empty, please enter value", 2000)
                 return  # Return early if parameter is empty
@@ -521,13 +520,13 @@ class SubWindow2(QDialog):
                 # Convert non-negative integers to bytes
                 parameter_bytes = int(parameter).to_bytes(8, byteorder='little', signed=False)
 
-            CRC_bytes = CombinPost.CalCRC_16(HeaderCode, contcommand, parameter_bytes)
+            CRC_bytes = self.OpenSeri.CalCRC_16(HeaderCode, contcommand, parameter_bytes)
             print(f"CRC-16校验值: 0x{CRC_bytes:04X}")
             print("para: ", parameter_bytes, type(parameter_bytes))
-            DataPacket = CombinPost.create_data_packet(HeaderCode, contcommand, parameter_bytes, CRC_bytes)
+            DataPacket = self.OpenSeri.create_data_packet(HeaderCode, contcommand, parameter_bytes, CRC_bytes)
             hex_data_packet = ''.join([f'{byte:02x}' for byte in DataPacket])
             print("Data Packet in PostCommandInfo: ", hex_data_packet)
-            CombinPost.send_msg(DataPacket)
+            self.OpenSeri.send_msg(DataPacket)
         except Exception as e:
             self.show_auto_close_dialog(f"Warning: {str(e)}", 2000)
 
@@ -543,7 +542,6 @@ class SubWindow2(QDialog):
     def PostPID(self, contcommand, Pvalue, Ivalue, Dvalue):
         try:
             HeaderCode = 0x55AA
-            CombinPost = SerialCommunication()
             if Pvalue == '' and Ivalue == '' and Dvalue == '':
                 self.show_auto_close_dialog("Error: please input PID value", 2000)
                 return  # Return early if parameter is empty
@@ -571,16 +569,17 @@ class SubWindow2(QDialog):
             Dvalue_bytes = Dvalue.to_bytes(2, byteorder='little', signed=False)
 
             PID_para = Pvalue_bytes + Ivalue_bytes + Dvalue_bytes
-            CRC_bytes = CombinPost.CalCRC_16(HeaderCode, contcommand, PID_para)
+            CRC_bytes = self.OpenSeri.CalCRC_16(HeaderCode, contcommand, PID_para)
             print(f"CRC-16校验值: 0x{CRC_bytes:04X}")
             print("Pvalue: ", Pvalue_bytes, type(Pvalue_bytes))
             print("Ivalue: ", Ivalue_bytes, type(Ivalue_bytes))
             print("Dvalue: ", Dvalue_bytes, type(Dvalue_bytes))
-            DataPacket = CombinPost.create_data_packet(HeaderCode, contcommand, PID_para, CRC_bytes)
+            DataPacket = self.OpenSeri.create_data_packet(HeaderCode, contcommand, PID_para, CRC_bytes)
             hex_data_packet = ''.join([f'{byte:02x}' for byte in DataPacket])
             print("Data Packet in PostCommandInfo: ", hex_data_packet)
-            CombinPost.send_msg(DataPacket)
+            self.OpenSeri.send_msg(DataPacket)
         except Exception as e:
+            print("Error while sending PID data:", e)
             self.show_auto_close_dialog(f"Warning: {str(e)}", 2000)
 
     # def update_plot_data(self):

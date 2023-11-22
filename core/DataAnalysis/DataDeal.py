@@ -16,6 +16,7 @@ class SerialCommunication(QObject):
         super().__init__()
         self.ser = None
         self.running = False
+        self.ser_lock = threading.Lock()  # 创建一个锁对象
         # 定义命令处理函数的映射
         self.cmd_handlers = {
             b'\x17': self.handle17_ShowSpeed,
@@ -25,14 +26,21 @@ class SerialCommunication(QObject):
 
     def open_ser(self, port, baudrate):
         try:
-            self.ser = serial.Serial(port, baudrate, timeout=10)
-            if(self.ser.isOpen() == True):
-                self.running = True
-                threading.Thread(target=self.read_data, daemon=True).start()
-                print("The serial port successfully opened")
-                return True, "Serial port successfully opened"
+            with self.ser_lock:  # 使用锁来保护对 self.ser 的访问
+                self.ser = serial.Serial(port, baudrate, timeout=1)
+                if self.ser.is_open:
+                    self.running = True
+                    threading.Thread(target=self.read_data, daemon=True).start()
+                    print("The serial port successfully opened")
+                    return True, "Serial port successfully opened"
+                else:
+                    error_msg = "Failed to open serial port."
+                    print(error_msg)
+                    return False, error_msg
         except Exception as exc:
-            return False, f"Serial port opening failed: {str(exc)}"
+            error_msg = f"Serial port opening failed: {str(exc)}"
+            print(error_msg)
+            return False, error_msg
 
 
     def close_ser(self):
@@ -47,14 +55,18 @@ class SerialCommunication(QObject):
             return False, f"Error while closing serial port:{str(exc)}"
 
     def send_msg(self, data):
+        # print(f"Trying to send data. Serial port open: {self.ser.is_open}")
+        if not self.ser or not self.ser.is_open:
+            # print("Serial port is not open")
+            return False, "Serial port is not open"
+        # 尝试发送数据
         try:
-            if self.ser and self.ser.is_open:
-                self.ser.write(data)
-                print(f"Data sent: {data.hex()}")
-            else:
-                print("Serial port is not open.")
+            self.ser.write(data)
+            print(f"Data sent successfully. Data is : {data.hex()}")
+            return True, "Data sent successfully"
         except Exception as exc:
-            print(f"Error while sending data: {exc}")
+            # print("Error while sending data:", exc)
+            return False, f"Error while sending data: {exc}"
 
 
     def handle17_ShowSpeed(self, para):
