@@ -10,4 +10,7 @@
 - ```cpp
   pyinstaller --onefile --windowed --clean xxxx.py
   ```
-  
+- 如果想修改名字或者加入其他资源如图片、视频资源可以这样输入
+- ```cpp
+  pyinstaller --onefile --windowed --add-data "E:\SCADAL\Icons\COOL2.mp4;Icons" --add-data "E:\SCADAL\Icons\cool3.mp4;Icons" --name xxxxxx xxxx.py
+  ```

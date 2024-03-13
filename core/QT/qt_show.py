@@ -1,4 +1,5 @@
 import sys
+import os
 from PyQt6.QtWidgets import *
 from pyqtgraph import PlotWidget, plot
 from core.DataAnalysis.DataDeal import *
@@ -346,8 +347,18 @@ class SubWindow2(QDialog):
         self.videoWidget = QVideoWidget()
         self.mediaPlayer.setVideoOutput(self.videoWidget)
         self.videoWidget.setAspectRatioMode(Qt.AspectRatioMode.IgnoreAspectRatio)
+
+        # 在需要设置视频源的地方，比如在初始化视频播放器的方法中
+        base_path1 = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        if getattr(sys, 'frozen', False):
+            # 打包后的环境
+            video_path = os.path.join(base_path1, 'Icons', 'cool3.mp4')
+        else:
+            # 开发环境
+            video_path = os.path.join(base_path1, '..', 'Icons', 'cool3.mp4')
         # 加载视频文件
-        self.mediaPlayer.setSource(QUrl.fromLocalFile("../Icons/cool3.mp4"))
+        self.mediaPlayer.setSource(QUrl.fromLocalFile(video_path))
+#        self.mediaPlayer.setSource(QUrl.fromLocalFile("../Icons/cool3.mp4"))
         self.mediaPlayer.play()
         # 连接信号
         self.mediaPlayer.mediaStatusChanged.connect(self.media_status_changed)
@@ -695,7 +706,17 @@ class MainWindow(QMainWindow):
         self.createButton("网络调试助手", button_layout, lambda: self.stacked_widget.setCurrentWidget(self.subWindow4))
 
         # 加载视频文件
-        self.mediaPlayer.setSource(QUrl.fromLocalFile("../Icons/COOL2.mp4"))
+        base_path2 = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+
+        if getattr(sys, 'frozen', False):
+            # 打包后的环境
+            video_path2 = os.path.join(base_path2, 'Icons', 'COOL2.mp4')
+        else:
+            # 开发环境
+            video_path2 = os.path.join(base_path2, '..', 'Icons', 'COOL2.mp4')
+
+        self.mediaPlayer.setSource(QUrl.fromLocalFile(video_path2))
+#        self.mediaPlayer.setSource(QUrl.fromLocalFile("../Icons/COOL2.mp4"))
         self.mediaPlayer.play()
         # 连接信号
         self.mediaPlayer.mediaStatusChanged.connect(self.media_status_changed)

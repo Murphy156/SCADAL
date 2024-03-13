@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('E:\\SCADAL\\Icons\\COOL2.mp4', 'Icons'), ('E:\\SCADAL\\Icons\\cool3.mp4', 'Icons')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -34,5 +34,4 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['favicon.ico'],
 )
