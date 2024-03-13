@@ -1,5 +1,6 @@
 import sys
 from PyQt6.QtWidgets import *
+from pyqtgraph import PlotWidget, plot
 from core.DataAnalysis.DataDeal import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
@@ -36,15 +37,9 @@ class SubWindow2(QDialog):
     def __init__(self):
         super().__init__()
 
-        #设置定时器用于周期性读取串口数据
-        # self.timer = QTimer()
-        # self.timer.setInterval(100)  # 每100毫秒更新一次
-        # self.timer.timeout.connect(self.update_plot_data)
-        # self.timer.start()
-
         # 初始化数据
         self.x = list(range(100))  # 100个数据点
-        self.y = [0 for _ in range(100)]  # 初始化为0
+        self.y = [0] * 100  # 初始化Y轴数据为0
 
         # 创建一个串口对象
         self.OpenSeri = SerialCommunication()
@@ -185,7 +180,7 @@ class SubWindow2(QDialog):
         # P的控制框
         self.lable_p = self.create_label("P", "Segoe UI", 10, True, "#000080")
 
-        self.P_RPMEdit = self.create_line_edit("1.00", 60, 22)
+        self.P_RPMEdit = self.create_line_edit("1.000", 60, 22)
 
         # P的控制框的水平布局设置
         self.P_Layout = QHBoxLayout()
@@ -195,7 +190,7 @@ class SubWindow2(QDialog):
 
         # I的控制框
         self.lable_I = self.create_label("I", "Segoe UI", 10, True, "#000080")
-        self.I_RPMEdit = self.create_line_edit("1.00", 60, 22)
+        self.I_RPMEdit = self.create_line_edit("1.000", 60, 22)
 
         # I的控制框的水平布局设置
         self.I_Layout = QHBoxLayout()
@@ -205,7 +200,7 @@ class SubWindow2(QDialog):
 
         # D的控制框
         self.lable_D = self.create_label("D", "Segoe UI", 10, True, "#000080")
-        self.D_RPMEdit = self.create_line_edit("1.00", 60, 22)
+        self.D_RPMEdit = self.create_line_edit("1.000", 60, 22)
 
         # D的控制框的水平布局设置
         self.D_Layout = QHBoxLayout()
@@ -270,7 +265,6 @@ class SubWindow2(QDialog):
         self.ResetButton_Layout.addWidget(self.RightButton)
         self.ResetButton_Layout.addWidget(self.ResetButton)
 
-
         # 创建控制面板中电机控制框架的布局
         self.Controlseparator_Frame2_Layout = QVBoxLayout(self.Controlseparator_Frame2)
         self.Controlseparator_Frame2_Layout.addWidget(self.label5)
@@ -317,6 +311,8 @@ class SubWindow2(QDialog):
         """ 创建图形控件 """
         self.graphWidget1 = pg.PlotWidget()
         self.setupGraphWidget(self.graphWidget1, "Speed/RPM", "rpm", "time/s")
+        # 创建一个图形数据项
+        self.plotDataItem = self.graphWidget1.plot(self.x, self.y, pen='r')
 
         # 创建电机1显示布局
         self.Showseparator_Frame1_Layout = QVBoxLayout(self.Showseparator_Frame1)
@@ -366,6 +362,8 @@ class SubWindow2(QDialog):
 
         # 将布局设置为子窗口的布局
         self.setLayout(self.Sub2Mainlayout )
+
+
 
     def create_button(self, text, width, height):
         """
@@ -548,23 +546,22 @@ class SubWindow2(QDialog):
             """
             PID参数，一般是正数
             """
-            # 默认值设置为0
-            Pvalue = int(Pvalue) if Pvalue else 0
+            # 转换浮点数为整数，用1000倍来保留三位小数,默认值设置为0
+            Pvalue = int(float(Pvalue) * 1000) if Pvalue else 0
             if not 0 <= Pvalue <= 16777215:
-                self.show_auto_close_dialog("范围错误: P值超出范围。它必须在0到16777215之间。", 2000)
+                self.show_auto_close_dialog("范围错误: P值超出范围。它必须在0到16777之间。", 2000)
                 return
-
             Pvalue_bytes = Pvalue.to_bytes(3, byteorder='little', signed=False)
 
-            Ivalue = int(Ivalue) if Ivalue else 0
-            if not 0 <= Ivalue <= 16777215:
-                self.show_auto_close_dialog("范围错误: I值超出范围。它必须在0到16777215之间。", 2000)
+            Ivalue = int(float(Ivalue) * 1000) if Ivalue else 0
+            if not 0 <= Ivalue <= 16777215000:
+                self.show_auto_close_dialog("范围错误: I值超出范围。它必须在0到16777之间。", 2000)
                 return
             Ivalue_bytes = Ivalue.to_bytes(3, byteorder='little', signed=False)
 
-            Dvalue = int(Dvalue) if Dvalue else 0
-            if not 0 <= Dvalue <= 65535:
-                self.show_auto_close_dialog("范围错误: D值超出范围。它必须在0到65535之间。", 2000)
+            Dvalue = int(float(Dvalue) * 1000) if Dvalue else 0
+            if not 0 <= Dvalue <= 65535000:
+                self.show_auto_close_dialog("范围错误: D值超出范围。它必须在0到65之间。", 2000)
                 return
             Dvalue_bytes = Dvalue.to_bytes(2, byteorder='little', signed=False)
 
@@ -595,12 +592,14 @@ class SubWindow2(QDialog):
     #     # 更新图形
     #     self.graphWidget2.plot(self.x, self.y, pen=pg.mkPen(color=(255, 0, 0), width=5))
 
+
     def update_plot_speed(self, new_speed):
         self.x.append(self.x[-1] + 1)  # 增加新的x值
         self.y.append(new_speed)  # 添加新的速度值
 
         # 更新图形
-        self.graphWidget1.plot(self.x, self.y, pen=pg.mkPen(color=(255, 0, 0), width=5))
+        self.plotDataItem.setData(self.x, self.y)
+        # self.graphWidget1.plot(self.x, self.y, pen=pg.mkPen(color=(255, 0, 0), width=5))
 
     def media_status_changed(self, status):
         # 检查媒体播放状态

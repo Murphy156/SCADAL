@@ -11,12 +11,11 @@ class SerialCommunication(QObject):
     data_received = pyqtSignal(bytes)
     speed_data_received = pyqtSignal(int)
 
-
     def __init__(self):
         super().__init__()
         self.ser = None
         self.running = False
-        self.ser_lock = threading.Lock()  # 创建一个锁对象
+        self.thread = QThread()   # 直接创建一个全局读数据线程
         # 定义命令处理函数的映射
         self.cmd_handlers = {
             b'\x17': self.handle17_ShowSpeed,
@@ -26,33 +25,46 @@ class SerialCommunication(QObject):
 
     def open_ser(self, port, baudrate):
         try:
-            with self.ser_lock:  # 使用锁来保护对 self.ser 的访问
-                self.ser = serial.Serial(port, baudrate, timeout=1)
-                if self.ser.is_open:
-                    self.running = True
-                    threading.Thread(target=self.read_data, daemon=True).start()
-                    print("The serial port successfully opened")
-                    return True, "Serial port successfully opened"
-                else:
-                    error_msg = "Failed to open serial port."
-                    print(error_msg)
-                    return False, error_msg
+            self.ser = serial.Serial(port, baudrate, timeout=1)
+            if self.ser.is_open:
+                self.running = True
+                self.start_reading_thread()  # 使用 QThread 启动读取流程
+                print("The serial port successfully opened")
+                return True, "Serial port successfully opened"
+            else:
+                error_msg = "Failed to open serial port."
+                print(error_msg)
+                return False, error_msg
         except Exception as exc:
             error_msg = f"Serial port opening failed: {str(exc)}"
             print(error_msg)
             return False, error_msg
 
+    def start_reading_thread(self):
+        print("Attempting to start the reading thread...")
+        self.moveToThread(self.thread)  # 移动当前对象到新线程
+        self.thread.started.connect(self.read_data)
+        self.thread.finished.connect(lambda: print("Reading thread finished."))
+        self.thread.start()
+        print("Reading thread successfully started.")
 
     def close_ser(self):
         try:
-            if self.ser and self.ser.is_open:
-                self.running = False
+            if self.thread is not None:
+                # 确保从线程发出退出请求
+                self.thread.requestInterruption()  # 请求线程中断
+                self.thread.quit()  # 请求线程退出
+                self.thread.wait()  # 等待线程完全退出
+#                self.thread = None
+            if self.ser is not None and self.ser.is_open:
                 self.ser.close()
+                self.ser = None  # 重置串口对象，准备下次打开
+                self.running = False
                 return True, "Serial port closed successfully."
             else:
-                return False, "Serial port closed fail."
+                return False, "Serial port was not open."
         except Exception as exc:
-            return False, f"Error while closing serial port:{str(exc)}"
+            return False, f"Error while closing serial port: {str(exc)}"
 
     def send_msg(self, data):
         # print(f"Trying to send data. Serial port open: {self.ser.is_open}")
@@ -92,26 +104,35 @@ class SerialCommunication(QObject):
 
 
     def read_data(self):
-        while self.running:
-            if self.ser.in_waiting > 0:
-                data = self.ser.read(self.ser.in_waiting)
-                hex_representation = data.hex()
-                print(hex_representation)
-                self.data_received.emit(data)
-                # 处理并验证数据
-                validated_data = self.process_and_validate_data(data)
-                if validated_data is not False:
-                    cmd = validated_data['cmd']
-                    para = validated_data['para']
-                    handler = self.cmd_handlers.get(cmd)
-                    if handler:
-                        handler(para)
+        print("Data reading started...")
+        while self.running and not self.thread.isInterruptionRequested():
+            try:
+                if self.ser is not None and self.ser.in_waiting > 0:
+                    data = self.ser.read(self.ser.in_waiting)
+                    hex_representation = data.hex()
+                    print(hex_representation)
+                    # 使用emit发出信号，传递读取到的原始数据
+                    self.data_received.emit(data)
+
+                    # 调用方法处理和验证数据
+                    validated_data = self.process_and_validate_data(data)
+                    if validated_data is not False:
+                        cmd = validated_data['cmd']
+                        para = validated_data['para']
+                        # 根据解析出的命令和参数进行相应的处理
+                        handler = self.cmd_handlers.get(cmd)
+                        if handler:
+                            handler(para)
+                        else:
+                            print("Unknown command:", cmd.hex())
                     else:
-                        print("Unknown command:", cmd.hex())
-                else:
-                    print("Invalid or incomplete data received")
-            else:
-                time.sleep(0.1)
+                        print("Invalid or incomplete data received")
+            except Exception as e:
+                print(f"Error reading data: {e}")
+
+            QThread.msleep(10)  # 稍微延迟以减少CPU占用率
+
+        print("Exiting read_data loop.")
 
 
 
@@ -197,8 +218,6 @@ class SerialCommunication(QObject):
         hex_data_packet = ''.join([f'{byte:02x}' for byte in combined_data])
         print("Data Packet in CRC: ", hex_data_packet)
         for i, byte in enumerate(combined_data):
-            #            print("循环次数:", i)  # 打印循环次数
-            #           print("当前处理的字节:", hex(byte))  # 打印当前处理的字节
             crc ^= (byte << 8)  # 将当前字节左移8位后与CRC异或,相当于加入了对crc的影响
             for _ in range(8):
                 if crc & 0x8000:
@@ -216,8 +235,6 @@ class SerialCommunication(QObject):
         print("Data Packet in CRC: ", hex_data_packet)
 
         for i, byte in enumerate(combined_data):
-            #            print("循环次数:", i)  # 打印循环次数
-            #           print("当前处理的字节:", hex(byte))  # 打印当前处理的字节
             crc ^= (byte << 8)  # 将当前字节左移8位后与CRC异或,相当于加入了对crc的影响
             for _ in range(8):
                 if crc & 0x8000:
