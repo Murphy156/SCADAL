@@ -14,3 +14,7 @@
 - ```cpp
   pyinstaller --onefile --windowed --add-data "E:\SCADAL\Icons\COOL2.mp4;Icons" --add-data "E:\SCADAL\Icons\cool3.mp4;Icons" --name xxxxxx xxxx.py
   ```
+- 加图标
+- ```cpp
+    pyinstaller --onefile --windowed --icon=app_icon.ico main.py
+  ```
